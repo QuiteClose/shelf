@@ -31,9 +31,19 @@
     nnoremap <silent> n   n:call HLNext(0.4)<cr>
     nnoremap <silent> N   N:call HLNext(0.4)<cr>
     function! HLNext (blinktime)
-        set invcursorline
+        highlight RedOnRed ctermfg=red ctermbg=red
+        let [bufnum, lnum, col, off] = getpos('.')
+        let matchlen = strlen(matchstr(strpart(getline('.'),col-1),@/))
+        echo matchlen
+        let ring_pat = (lnum > 1 ? '\%'.(lnum-1).'l\%>'.max([col-4,1]) .'v\%<'.(col+matchlen+3).'v.\|' : '')
+                \ . '\%'.lnum.'l\%>'.max([col-4,1]) .'v\%<'.col.'v.'
+                \ . '\|'
+                \ . '\%'.lnum.'l\%>'.max([col+matchlen-1,1]) .'v\%<'.(col+matchlen+3).'v.'
+                \ . '\|'
+                \ . '\%'.(lnum+1).'l\%>'.max([col-4,1]) .'v\%<'.(col+matchlen+3).'v.'
+        let ring = matchadd('RedOnRed', ring_pat, 101)
         redraw
         exec 'sleep ' . float2nr(a:blinktime * 1000) . 'm'
-        set invcursorline
+        call matchdelete(ring)
         redraw
     endfunction
