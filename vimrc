@@ -47,3 +47,7 @@
         call matchdelete(ring)
         redraw
     endfunction
+    
+" highlight tabs and trailing whitespace
+    exec "set listchars=tab:\uBB\uBB,trail:\uB7,nbsp:~"
+    set list
