@@ -19,5 +19,4 @@ Features
 * Relative line numbers in the gutter.
 * Persistent undo history.
 * Paste insert mode disables auto-indentation (toggle with F2).
-* Markdown syntax highlighting
 
