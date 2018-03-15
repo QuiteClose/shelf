@@ -9,6 +9,10 @@
 " Syntax highlighting
     syntax on
 
+" Line numbers and ruler
+    set number
+    set ruler
+
 " Persist undo history between file edits
     set undofile
     set undodir=~/.vimundo/
