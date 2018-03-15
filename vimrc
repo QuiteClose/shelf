@@ -9,11 +9,6 @@
 " Syntax highlighting
     syntax on
 
-" Relative Line numbering
-    set relativenumber
-    set numberwidth=2
-    highlight LineNr term=bold cterm=NONE ctermfg=151  ctermbg=NONE gui=NONE guifg=DarkGray guibg=NONE
-
 " Persist undo history between file edits
     set undofile
     set undodir=~/.vimundo/
