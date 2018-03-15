@@ -7,7 +7,9 @@
     set nowrap
 
 " Syntax highlighting
-    syntax on
+    syntax enable
+    set background=dark
+    colorscheme solarized
 
 " Line numbers and ruler
     set number
