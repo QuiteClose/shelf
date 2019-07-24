@@ -5,6 +5,7 @@
     set softtabstop=4
     set autoindent
     set nowrap
+    set backspace=indent,eol,start
 
 " Syntax highlighting
     syntax enable
