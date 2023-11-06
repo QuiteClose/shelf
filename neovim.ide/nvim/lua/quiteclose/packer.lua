@@ -18,6 +18,7 @@ return require('packer').startup(function(use)
   use('theprimeagen/harpoon')
   use('mbbill/undotree')
   use('tpope/vim-fugitive')
+  use('github/copilot.vim')
 
   use {
     'VonHeikemen/lsp-zero.nvim',
@@ -42,4 +43,5 @@ return require('packer').startup(function(use)
       vim.cmd.colorscheme 'solarized'
     end
   }
+
 end)
