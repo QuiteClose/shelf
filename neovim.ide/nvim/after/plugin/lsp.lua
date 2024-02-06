@@ -34,9 +34,10 @@ require('lspconfig').pylsp.setup{
         pycodestyle = {
           ignore = {
             'E221', --multiple spaces before operator
-   	    'E225', --missing whitespace around operator
-	    'E226', --missing whitespace around arithmetic operator
-	    'W391', --blank line at end of file
+            'E225', --missing whitespace around operator
+            'E226', --missing whitespace around arithmetic operator
+            'E501', --line too long
+            'W391', --blank line at end of file
           },  
           maxLineLength = 100
         }
