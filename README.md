@@ -1,11 +1,20 @@
-# NeoVim (and Vim) Config
+# quip
 
-## NeoVim Installation
+## Shell Utilities
+Source the `include/*` files to add the utilities to your shell session. e.g.
+Add the following to the end of your `~/.zshrc`:
+
+```
+QUIP_PATH=~/repos/quip  # change to where you save this repo
+for file in $QUIP_PATH/include/*; do
+	source $file;
+done
+```
+
+## NeoVim
 
 ```bash
-mkdir ~/etc
-git clone https://github.com/quiteclose/vimrc.git ~/etc/vimrc
-ln -s ~/etc/vimrc/neovim/nvim ~/.config/nvim
+ln -s nvim ~/.config/nvim
 mkdir ~/.nvimundo
 ```
 
@@ -13,9 +22,7 @@ mkdir ~/.nvimundo
 *   Install neovim
 *   Clone repo & link:
     ```bash
-    mkdir ~/etc
-    git clone https://github.com/quiteclose/vimrc.git ~/etc/vimrc
-    ln -s ~/etc/vimrc/neovim.ide/nvim ~/.config/nvim
+    ln -s nvim ~/.config/nvim
     mkdir ~/.nvimundo
     ```
 *   Install packer: https://github.com/wbthomason/packer.nvim
@@ -29,14 +36,3 @@ mkdir ~/.nvimundo
         :PackerSync
         ```
 *   Install CoPilot
-
-
-
-
-## Vim (deprecated)
-**See vim sub-directory README.**
-
-NeoVim migration deprecated Vim config as of May 2022. The following guide
-was helpful with the migration:
-
-*   [Migrating from vim to neovim](https://otavio.dev/2018/09/30/migrating-from-vim-to-neovim/) by Valadares.
