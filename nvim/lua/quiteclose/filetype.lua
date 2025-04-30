@@ -1,7 +1,7 @@
 vim.api.nvim_create_augroup("setFiletypeTab", { clear = true })
 vim.api.nvim_create_autocmd("Filetype", {
   group = "setFiletypeTab",
-  pattern = "Dockerfile,go,Makefile,zig",
+  pattern = "Dockerfile,sh,go,Makefile,zig",
   callback = function()
     vim.schedule(function()
       print("setFiletypeTab called")
