@@ -6,7 +6,7 @@
 ##############################################################
 
 function ts() {
-	local STAMP="$(date -u '+%Y%m%d-%H%MZ')"
+	local STAMP="$(date -u '+%y%m%d-%H%MZ')"
 	local TXT="timestamps.txt"
 	if [ -z "$1" ]; then
 		grep --color '^\d\S*' <(cat $TXT; echo "$STAMP <<< Current time.")
