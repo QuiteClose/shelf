@@ -1,12 +1,12 @@
-# quip
+# Shelf
 
 ## Shell Utilities
 Source the `include/*` files to add the utilities to your shell session. e.g.
 Add the following to the end of your `~/.zshrc`:
 
 ```
-QUIP_PATH=~/repos/quip  # change to where you save this repo
-for file in $QUIP_PATH/include/*; do
+SHELF_PATH=~/example/shelf
+for file in $SHELF_PATH/include/*; do
 	source $file;
 done
 ```
@@ -35,7 +35,7 @@ mkdir ~/.nvimundo
         ```
         :PackerSync
         ```
-*   Install the Meslo NerdFont (or your perferred [Nerd Font](https://github.com/ryanoasis/nerd-fonts/))
+*   Install `MesloLGSNerdFontMono-Regular.ttf` (Or some other [Nerd Font](https://github.com/ryanoasis/nerd-fonts/))
 *   Install tree-sitter
 *   Install CoPilot
 
