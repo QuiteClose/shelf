@@ -1,2 +1,9 @@
-.vim/.netrwhist
-neovim.ide/nvim/plugin/packer_compiled.lua
+# Temporary Files
+*.swp
+*.idea
+
+# MacOS
+.DS_Store
+
+# vscode
+.vscode
