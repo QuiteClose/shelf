@@ -5,10 +5,7 @@ Source the `include/*` files to add the utilities to your shell session. e.g.
 Add the following to the end of your `~/.zshrc`:
 
 ```
-SHELF_PATH=~/example/shelf
-for file in $SHELF_PATH/include/*; do
-	source $file;
-done
+source ~/shelf/shelf.sh
 ```
 
 ## NeoVim
