@@ -1,10 +1,12 @@
 ##############################################################
 # shoes.sh
-# Manages cluster login files alongside a vault token. Edit or
-# source the vault token with -e and -t respectively. Name a
-# cluster to source a matching cluster file. If many files
-# match, they will be listed. If none match, you can save a
-# new cluster file with -c *name*
+# Manages a common token file and cluster login files. Source
+# the token with -t, edit it with -e. Name a cluster to source
+# a matching cluster file. If multiple cluster files match,
+# falls-back to searching for the given name. You can force
+# this search-behaviour with -s if you don't want to login.
+# When naming a cluster, use -e and -c to create a new cluster
+# file with the given name.
 ##############################################################
 
 function shoes() {
@@ -24,6 +26,10 @@ function shoes() {
 	-h|--help)
 		ACTION="help"
 		;;
+	-s|--search)
+		ACTION="search"
+		CLUSTER="$2"
+		;;
 	-t|--token)
 		ACTION="token"
 		CLUSTER="$2"
@@ -36,12 +42,15 @@ function shoes() {
 	case $ACTION in
 	help)
 		echo "Usage: shoes [OPTIONS] <CLUSTER>"
-		echo "Login to a cluster with a saved token. Or, if an option is given:"
+		echo "  Login to a cluster with a saved token. If no single cluster-file"
+		echo "  matches the given name, list all matches. Non-login action are"
+		echo "  triggered via options:"
 		echo 
-		echo "  -c, --create     Create a cluster file with the given name."
-		echo "  -e, --edit       Edit the token (or cluster if given.)"
+		echo "  -c, --create     Create a cluster-file with the given name."
+		echo "  -e, --edit       Edit the token (or cluster-file if given.)"
 		echo "  -h, --help       Display this help message."
 		echo "  -r, --rename     Rename a cluster file."
+		echo "  -s, --search     List matching cluster files."
 		echo "  -t, --token      Source the token."
 		return 0
 		;;
@@ -95,19 +104,28 @@ function shoes() {
 			source "$SHOES_PATH/cluster/$CLUSTER.sh"
 			return $?
 		fi
+		;& # fall-through if no cluster file matches exactly
+	search)
+		if [ -z "$CLUSTER" ]; then
+			CLUSTER=".*"
+		fi
 		local CLUSTER_LIST="$(ls $SHOES_PATH/cluster|grep -v ^_|awk -F. '{print $1}'|sort)"
-		if ! grep -q $CLUSTER <<< $CLUSTER_LIST; then
+		local MATCHES=$(grep $CLUSTER <<< $CLUSTER_LIST)
+		local LENGTH=$(wc -l <<< $MATCHES|xargs)
+		if [ "$MATCHES" = "" ]; then
 			>&2 echo "Found 0 clusters matching \"$CLUSTER\""
 			return 1
+		elif [ "$LENGTH" -gt 1 ]; then
+			ACTION="search"
 		fi
-		local MATCHES=$(grep --color $CLUSTER <<< $CLUSTER_LIST)
-		if [ $(wc -l <<< $MATCHES|xargs) -ne 1 ]; then
-			>&2 echo "Found $(wc -l <<< $MATCHES|xargs) matching clusters:"
+		if [ "$ACTION" = "search" ]; then
+			>&2 echo "Found $LENGTH matching clusters:"
 			sed 's/^/  /' <<< $MATCHES|grep --color $CLUSTER
-			return 1
+			return 0
+		else
+			>&2 echo "Sourcing cluster file at $SHOES_PATH/cluster/$MATCHES.sh"
+			source "$SHOES_PATH/cluster/$MATCHES.sh"
 		fi
-		>&2 echo "Sourcing cluster file at $SHOES_PATH/cluster/$MATCHES.sh"
-		source "$SHOES_PATH/cluster/$MATCHES.sh"
 		;;
 	esac
 }
