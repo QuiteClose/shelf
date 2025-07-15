@@ -4,6 +4,8 @@ keybind = f11=toggle_window_decorations
 cursor-style = block
 font-family = MesloLGS Nerd Font Mono
 font-size = 20
+font-thicken = true
+font-thicken-strength = 10
 theme = iTerm2 Solarized Dark
 window-decoration = auto
 ##################################################
