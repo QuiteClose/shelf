@@ -39,7 +39,7 @@ vim.api.nvim_create_autocmd("Filetype", {
 vim.api.nvim_create_augroup("setFiletypeWebdev", { clear = true })
 vim.api.nvim_create_autocmd("Filetype", {
   group = "setFiletypeWebdev",
-  pattern = "html,css,scss,js,ts,jsx,tsx",
+  pattern = "lua,html,css,scss,js,ts,jsx,tsx",
   callback = function()
     vim.schedule(function()
       print("setFiletypeWebdev called")
