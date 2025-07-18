@@ -1,7 +1,7 @@
 vim.api.nvim_create_augroup("setFiletypeTab", { clear = true })
 vim.api.nvim_create_autocmd("Filetype", {
   group = "setFiletypeTab",
-  pattern = "Dockerfile,sh,go,Makefile,zig",
+  pattern = "Dockerfile,shell,go,Makefile,zig",
   callback = function()
     vim.schedule(function()
       print("setFiletypeTab called")
@@ -20,7 +20,7 @@ vim.api.nvim_create_autocmd("Filetype", {
 vim.api.nvim_create_augroup("setFiletypeSpace", { clear = true })
 vim.api.nvim_create_autocmd("Filetype", {
   group = "setFiletypeSpace",
-  pattern = "md,py,txt",
+  pattern = "markdown,python,txt",
   callback = function()
     vim.schedule(function()
       print("setFiletypeSpace called")
@@ -39,7 +39,7 @@ vim.api.nvim_create_autocmd("Filetype", {
 vim.api.nvim_create_augroup("setFiletypeWebdev", { clear = true })
 vim.api.nvim_create_autocmd("Filetype", {
   group = "setFiletypeWebdev",
-  pattern = "lua,html,css,scss,js,ts,jsx,tsx",
+  pattern = "lua,html,css,scss,javascript",
   callback = function()
     vim.schedule(function()
       print("setFiletypeWebdev called")
