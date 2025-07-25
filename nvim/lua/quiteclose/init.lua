@@ -1,5 +1,6 @@
+require("quiteclose.global")
 require("quiteclose.packer")
-require("quiteclose.set")
-require("quiteclose.remap")
+require("quiteclose.options")
+require("quiteclose.keymap")
 require("quiteclose.filetype")
 require("quiteclose.highlights")
