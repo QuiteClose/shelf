@@ -43,3 +43,68 @@ vim.keymap.set("n", "<leader>s", [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><
 vim.keymap.set("n", "<leader><leader>", function()
     vim.cmd("so")
 end)
+
+-- Called from ../../after/plugins/keymap.lua
+function after_plugins()
+  after_plugins_fugutive()
+  after_plugins_harpoon()
+  after_plugins_telescope()
+  after_plugins_undotree()
+end
+
+function after_plugins_fugutive()
+  vim.keymap.set('n', '<leader>gs', vim.cmd.Git)
+end
+
+function after_plugins_harpoon()
+  local mark = require('harpoon.mark')
+  local ui = require('harpoon.ui')
+
+  vim.keymap.set('n', '<leader>a', mark.add_file)
+  vim.keymap.set('n', '<C-e>', ui.toggle_quick_menu)
+
+  vim.keymap.set('n', '<C-h>', function() ui.nav_file(1) end)
+  vim.keymap.set('n', '<C-j>', function() ui.nav_prev() end)
+  vim.keymap.set('n', '<C-k>', function() ui.nav_next() end)
+  vim.keymap.set('n', '<C-l>', function() ui.nav_file(2) end)
+end
+
+function after_plugins_telescope()
+  local builtin = require('telescope.builtin')
+  vim.keymap.set('n', '<leader>pf', builtin.find_files, {})
+  vim.keymap.set('n', '<C-p>', builtin.git_files, {})
+  vim.keymap.set('n', '<leader>ps', function()
+    builtin.grep_string({ search = vim.fn.input("Grep > ") })
+  end)
+  vim.keymap.set('n', '<leader>vh', builtin.help_tags, {})
+end
+
+function after_plugins_undotree()
+  vim.keymap.set('n', '<leader>u', vim.cmd.UndotreeToggle)
+end
+
+-- Called from ../../after/plugins/lsp.lua
+function cmp_mapping()
+  local cmp = require('cmp')
+  return cmp.mapping.preset.insert {
+    ["<C-p>"] = cmp.mapping.select_prev_item(),
+    ["<C-n>"] = cmp.mapping.select_next_item(),
+    ["<C-y>"] = cmp.mapping.confirm({ select = true }),
+    ["<C-Space>"] = cmp.mapping.complete(),
+  }
+end
+
+-- Called from ../../after/plugins/lsp.lua
+function on_lsp_attach(client, bufnr)
+  local opts = { buffer = bufnr, remap = false }
+  vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
+  vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
+  vim.keymap.set("n", "<leader>vws", vim.lsp.buf.workspace_symbol, opts)
+  vim.keymap.set("n", "<leader>vd", vim.diagnostic.open_float, opts)
+  vim.keymap.set("n", "[d", vim.diagnostic.goto_next, opts)
+  vim.keymap.set("n", "]d", vim.diagnostic.goto_prev, opts)
+  vim.keymap.set("n", "<leader>vca", vim.lsp.buf.code_action, opts)
+  vim.keymap.set("n", "<leader>vrr", vim.lsp.buf.references, opts)
+  vim.keymap.set("n", "<leader>vrn", vim.lsp.buf.rename, opts)
+  vim.keymap.set("i", "<C-h>", vim.lsp.buf.signature_help, opts)
+end

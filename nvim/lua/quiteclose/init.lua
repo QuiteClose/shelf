@@ -1,5 +1,5 @@
 require("quiteclose.global")
-require("quiteclose.packer")
+require("quiteclose.lazy")
 require("quiteclose.options")
 require("quiteclose.keymap")
 require("quiteclose.filetype")
