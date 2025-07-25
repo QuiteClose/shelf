@@ -1,57 +1,52 @@
-vim.api.nvim_create_augroup("setFiletypeTab", { clear = true })
-vim.api.nvim_create_autocmd("Filetype", {
-  group = "setFiletypeTab",
-  pattern = "Dockerfile,shell,go,Makefile,zig",
-  callback = function()
+
+local SPACES  = 0
+local PER_TAB = 1
+
+function setWhitespace(width, fill)
+  function callback()
     vim.schedule(function()
-      print("setFiletypeTab called")
-      vim.opt.shiftwidth = 4
-      vim.opt.tabstop = 4
-      vim.opt.expandtab = false
-      vim.opt.listchars = {
-        nbsp = "~",
-        trail = "·",
-        lead = "·",
-        tab = "  ",
-      }
+      vim.opt.shiftwidth = width
+      vim.opt.tabstop = width
+      if fill == SPACES then
+        vim.opt.expandtab = true
+        vim.opt.listchars = {
+          lead = " ",
+          nbsp = "~",
+          tab = "··",
+          trail = "·",
+        }
+      else
+        vim.opt.expandtab = false
+        vim.opt.listchars = {
+          lead = "·",
+          nbsp = "~",
+          tab = "  ",
+          trail = "·",
+        }
+      end
     end)
   end
-})
-vim.api.nvim_create_augroup("setFiletypeSpace", { clear = true })
+  return callback
+end
+
+vim.api.nvim_create_augroup("setFiletypeWhitespace", { clear = true })
 vim.api.nvim_create_autocmd("Filetype", {
-  group = "setFiletypeSpace",
+  group = "setFiletypeWhitespace",
+  pattern = "Dockerfile,shell,go,Makefile",
+  callback = setWhitespace(4, PER_TAB)
+})
+vim.api.nvim_create_autocmd("Filetype", {
+  group = "setFiletypeWhitespace",
+  pattern = "zig",
+  callback = setWhitespace(2, PER_TAB)
+})
+vim.api.nvim_create_autocmd("Filetype", {
+  group = "setFiletypeWhitespace",
   pattern = "markdown,python,txt",
-  callback = function()
-    vim.schedule(function()
-      print("setFiletypeSpace called")
-      vim.opt.shiftwidth = 4
-      vim.opt.tabstop = 4
-      vim.opt.expandtab = true
-      vim.opt.listchars = {
-        lead = " ",
-        nbsp = "~",
-        tab = "··",
-        trail = "·",
-      }
-    end)
-  end
+  callback = setWhitespace(4, SPACES)
 })
-vim.api.nvim_create_augroup("setFiletypeWebdev", { clear = true })
 vim.api.nvim_create_autocmd("Filetype", {
-  group = "setFiletypeWebdev",
+  group = "setFiletypeWhitespace",
   pattern = "lua,html,css,scss,javascript",
-  callback = function()
-    vim.schedule(function()
-      print("setFiletypeWebdev called")
-      vim.opt.shiftwidth = 2
-      vim.opt.tabstop = 2
-      vim.opt.expandtab = true
-      vim.opt.listchars = {
-        lead = " ",
-        nbsp = "~",
-        tab = "··",
-        trail = "·",
-      }
-    end)
-  end
+  callback = setWhitespace(2, SPACES)
 })
