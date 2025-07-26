@@ -60,7 +60,7 @@ function workspace() {
             if [ -z "$LABEL" ]; then
                 >&2 echo "Leaving $PWD"
                 cd $(ls -td ~/workspaces/*|head -n1)
-                return 1
+                return 0
             fi
             local WORKSPACES=$(ls -td $WORKSPACE_ROOT/*|awk -F/ '{print $NF}')
             if [ "$ORDER" = "date" ]; then
