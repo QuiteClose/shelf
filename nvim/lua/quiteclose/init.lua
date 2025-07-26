@@ -1,4 +1,4 @@
 require('quiteclose.global')
 require('quiteclose.options')
 require('quiteclose.keymap')
-require('quiteclose.filetype')
+require('quiteclose.indent')
