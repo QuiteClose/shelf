@@ -7,3 +7,7 @@
 
 # vscode
 .vscode
+
+# nvim configuration
+nvim/lazy-lock.json
+
