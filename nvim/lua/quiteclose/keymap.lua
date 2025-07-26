@@ -1,14 +1,21 @@
 
 vim.keymap.set("n", "<leader>pv", vim.cmd.Ex)
 
+-- Move selected line / block of text in visual mode
 vim.keymap.set("v", "J", ":m '>+1<CR>gv=gv")
 vim.keymap.set("v", "K", ":m '<-2<CR>gv=gv")
 
+-- Do not move the cursor when joining lines
 vim.keymap.set("n", "J", "mzJ`z")
+
+-- Center cursor after scrolling with <C-d> and <C-u>
 vim.keymap.set("n", "<C-d>", "<C-d>zz")
 vim.keymap.set("n", "<C-u>", "<C-u>zz")
+
+-- Center search results after scrolling with n and N
 vim.keymap.set("n", "n", "nzzzv")
 vim.keymap.set("n", "N", "Nzzzv")
+
 
 vim.keymap.set("n", "<leader>vwm", function()
     require("vim-with-me").StartVimWithMe()
@@ -17,32 +24,25 @@ vim.keymap.set("n", "<leader>svwm", function()
     require("vim-with-me").StopVimWithMe()
 end)
 
--- greatest remap ever
+-- Deletes selection (to blackhole) and puts previously yanked text
 vim.keymap.set("x", "<leader>p", [["_dP]])
 
--- next greatest remap ever : asbjornHaland
+-- Delete without yanking (to blackhole)
+vim.keymap.set({"n", "v"}, "<leader>d", [["_d]])
+
+-- Yank to system clipboard (Y for the whole line)
 vim.keymap.set({"n", "v"}, "<leader>y", [["+y]])
 vim.keymap.set("n", "<leader>Y", [["+Y]])
 
-vim.keymap.set({"n", "v"}, "<leader>d", [["_d]])
-
--- This is going to get me cancelled
-vim.keymap.set("i", "<C-c>", "<Esc>")
-
-vim.keymap.set("n", "Q", "<nop>")
-vim.keymap.set("n", "<C-f>", "<cmd>silent !tmux neww tmux-sessionizer<CR>")
-vim.keymap.set("n", "<leader>f", vim.lsp.buf.format)
-
-vim.keymap.set("n", "<C-k>", "<cmd>cnext<CR>zz")
-vim.keymap.set("n", "<C-j>", "<cmd>cprev<CR>zz")
-vim.keymap.set("n", "<leader>k", "<cmd>lnext<CR>zz")
-vim.keymap.set("n", "<leader>j", "<cmd>lprev<CR>zz")
-
+-- Begin search/replace with the word under the cursor
 vim.keymap.set("n", "<leader>s", [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]])
+vim.keymap.set("x", "<leader>s", [[:<C-u>%s/<C-r><C-w>/<C-r><C-w>/gI<Left><Left><Left>]])
 
-vim.keymap.set("n", "<leader><leader>", function()
-    vim.cmd("so")
-end)
+-- Disable legacy Ex mode
+vim.keymap.set("n", "Q", "<nop>")
+
+-- Exit insert mode with <C-c>
+vim.keymap.set("i", "<C-c>", "<Esc>")
 
 -- Called from ../../after/plugins/keymap.lua
 function after_plugins()
@@ -53,6 +53,7 @@ function after_plugins()
 end
 
 function after_plugins_fugutive()
+  -- Open git status
   vim.keymap.set('n', '<leader>gs', vim.cmd.Git)
 end
 
@@ -62,28 +63,34 @@ function after_plugins_harpoon()
 
   vim.keymap.set('n', '<leader>a', mark.add_file)
   vim.keymap.set('n', '<C-e>', ui.toggle_quick_menu)
-
   vim.keymap.set('n', '<C-h>', function() ui.nav_file(1) end)
   vim.keymap.set('n', '<C-j>', function() ui.nav_prev() end)
   vim.keymap.set('n', '<C-k>', function() ui.nav_next() end)
   vim.keymap.set('n', '<C-l>', function() ui.nav_file(2) end)
 end
 
+-- Telescope plugin keymaps for searching files, git files, grep, and help
 function after_plugins_telescope()
   local builtin = require('telescope.builtin')
+  -- Find files in project
   vim.keymap.set('n', '<leader>pf', builtin.find_files, {})
+  -- Find git files
   vim.keymap.set('n', '<C-p>', builtin.git_files, {})
+  -- Grep string interactively
   vim.keymap.set('n', '<leader>ps', function()
     builtin.grep_string({ search = vim.fn.input("Grep > ") })
   end)
+  -- Show help tags
   vim.keymap.set('n', '<leader>vh', builtin.help_tags, {})
 end
 
+-- Undotree plugin keymap: toggle the undotree panel
 function after_plugins_undotree()
   vim.keymap.set('n', '<leader>u', vim.cmd.UndotreeToggle)
 end
 
--- Called from ../../after/plugins/lsp.lua
+-- Completion plugin keymaps (cmp)
+-- Provides key shortcuts for navigating and confirming completion suggestions
 function cmp_mapping()
   local cmp = require('cmp')
   return cmp.mapping.preset.insert {
@@ -97,14 +104,26 @@ end
 -- Called from ../../after/plugins/lsp.lua
 function on_lsp_attach(client, bufnr)
   local opts = { buffer = bufnr, remap = false }
+  -- Go to definition
   vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
+  -- Hover info
   vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
+  -- Workspace symbol search
   vim.keymap.set("n", "<leader>vws", vim.lsp.buf.workspace_symbol, opts)
+  -- Show diagnostics in floating window
   vim.keymap.set("n", "<leader>vd", vim.diagnostic.open_float, opts)
+  -- Go to next diagnostic
   vim.keymap.set("n", "[d", vim.diagnostic.goto_next, opts)
+  -- Go to previous diagnostic
   vim.keymap.set("n", "]d", vim.diagnostic.goto_prev, opts)
+  -- Code actions
   vim.keymap.set("n", "<leader>vca", vim.lsp.buf.code_action, opts)
+  -- List references
   vim.keymap.set("n", "<leader>vrr", vim.lsp.buf.references, opts)
+  -- Rename symbol
   vim.keymap.set("n", "<leader>vrn", vim.lsp.buf.rename, opts)
+  -- Signature help in insert mode
   vim.keymap.set("i", "<C-h>", vim.lsp.buf.signature_help, opts)
+  -- Reformat the buffer using the LSP
+  vim.keymap.set("n", "<leader>f", vim.lsp.buf.format)
 end
