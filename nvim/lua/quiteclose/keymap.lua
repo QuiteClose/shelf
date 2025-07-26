@@ -1,3 +1,4 @@
+local Callback = {}
 
 vim.keymap.set("n", "<leader>pv", vim.cmd.Ex)
 
@@ -45,7 +46,7 @@ vim.keymap.set("n", "Q", "<nop>")
 vim.keymap.set("i", "<C-c>", "<Esc>")
 
 -- Called from ../../after/plugins/keymap.lua
-function after_plugins()
+function Callback.after_plugins()
   after_plugins_fugutive()
   after_plugins_harpoon()
   after_plugins_telescope()
@@ -91,7 +92,7 @@ end
 
 -- Completion plugin keymaps (cmp)
 -- Provides key shortcuts for navigating and confirming completion suggestions
-function cmp_mapping()
+function Callback.cmp_mapping()
   local cmp = require('cmp')
   return cmp.mapping.preset.insert {
     ["<C-p>"] = cmp.mapping.select_prev_item(),
@@ -102,7 +103,7 @@ function cmp_mapping()
 end
 
 -- Called from ../../after/plugins/lsp.lua
-function on_lsp_attach(client, bufnr)
+function Callback.on_lsp_attach(client, bufnr)
   local opts = { buffer = bufnr, remap = false }
   -- Go to definition
   vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
@@ -127,3 +128,5 @@ function on_lsp_attach(client, bufnr)
   -- Reformat the buffer using the LSP
   vim.keymap.set("n", "<leader>f", vim.lsp.buf.format)
 end
+
+return Callback
