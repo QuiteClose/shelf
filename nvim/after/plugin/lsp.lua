@@ -3,31 +3,31 @@
 local cmp        = require('cmp')
 local luasnip    = require('luasnip')
 local navic      = require("nvim-navic")
-local quiteclose = require('quiteclose')
+local keymap     = require('quiteclose.keymap')
 
 -- Mason LSP Setup -------------------------------
 require('mason-lspconfig').setup {
   automatic_installation = true,
   ensure_installed = {
-    'bashls',
-    'django-template-lsp',
-    'gopls',
-    'html',
-    'jsonls',
-    'lua_ls',
-    'marksman',
-    'pylsp',
-    'ruby_lsp',
-    'rust_analyzer',
-    'ts_ls',
-    'yamlls',
-    'zls',
+    --'bashls',
+    --'django-template-lsp',
+    --'gopls',
+    --'html',
+    --'jsonls',
+    --'lua_ls',
+    --'marksman',
+    --'pylsp',
+    --'ruby_lsp',
+    --'rust_analyzer',
+    --'ts_ls',
+    --'yamlls',
+    --'zls',
   },
 }
 
 -- LSP Config ------------------------------------
 require('lspconfig').lua_ls.setup {
-  on_attach = quiteclose.keymap.on_lsp_attach,
+  on_attach = keymap.on_lsp_attach,
 }
 
 -- LSP Config: pylsp -----------------------------
@@ -60,7 +60,7 @@ cmp.setup {
       luasnip.lsp_expand(args.body)
     end,
   },
-  mapping = quiteclose.keymap.after_cmp(),
+  mapping = keymap.cmp_mapping(),
   sources = cmp.config.sources({
     { name = 'nvim_lsp' },
     { name = 'luasnip' },
