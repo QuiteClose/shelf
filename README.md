@@ -17,10 +17,10 @@ Add the following to the end of your `~/.zshrc`:
 source ~/shelf/shelf.sh
 ```
 
-## NeoVim
+## NeoVim (Basic)
 
 ```bash
-ln -s nvim ~/.config/nvim
+ln -s nvim ~/.config/nvim.basic
 mkdir ~/.nvimundo
 ```
 
