@@ -25,13 +25,17 @@ mkdir ~/.nvimundo
 ```
 
 ## NeoVim IDE Installation
-*   Install neovim
-*   Clone repo & link:
+*   Install `MesloLGSNerdFontMono-Regular.ttf` (Or some other [Nerd Font](https://github.com/ryanoasis/nerd-fonts/))
+*   Install packages:
+    ```bash
+    pacman -S cargo composer curl fd go jdk-openjdk julia lua lua-jsregexp lua51 lua51-jsregexp luarocks neovim perl php ruby tree-sitter tree-sitter-cli wget
+    ```
+*   Link config:
     ```bash
     ln -s nvim ~/.config/nvim
     mkdir ~/.nvimundo
     ```
-*   Install `MesloLGSNerdFontMono-Regular.ttf` (Or some other [Nerd Font](https://github.com/ryanoasis/nerd-fonts/))
-*   Install tree-sitter
-*   Install CoPilot
+*   Run `:Lazy` and Sync plugins.
+*   Run `:checkhealth` and resolve any issues.
+*   Run `:TSInstall all` to update tree-sitter parsers.
 
