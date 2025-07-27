@@ -9,7 +9,6 @@ return {
       automatic_installation = true,
       ensure_installed = {
         'bashls',
-        'django-template-lsp',
         'gopls',
         'html',
         'jsonls',
