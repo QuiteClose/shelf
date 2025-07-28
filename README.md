@@ -1,41 +1,74 @@
 # Shelf
+Provides config and utilities for a Shell environment.
+
+## Start
+Install the repo:
+```
+mkdir ~/opt
+git clone git@github.com:QuiteClose/shelf.git ~/opt/shelf
+```
 
 ## Ghostty
-
-Config files etc. for Ghostty terminal emulator:
-
-```
-mkdir -p ~/.config/ghostty
-ln -s ghostty/config ~/.config/ghostty/config
-```
+Config files etc. for Ghostty terminal emulator.
+*   Install on Linux:
+    ```
+    ln -s ~/opt/shelf/ghostty/config ~/.config/ghostty/config
+    ```
+*   Install on MacOS:
+    ```
+    ln -s ~/opt/shelf/ghostty/config ~/Library/Application\ Support/com.mitchellh.ghostty/config
+    ```
 
 ## Shell Utilities
-Source the `include/*` files to add the utilities to your shell session. e.g.
-Add the following to the end of your `~/.zshrc`:
-
+Source the `shelf.sh` file in your `~/.zshrc`:
 ```
-source ~/shelf/shelf.sh
+echo "source ~/opt/shelf/shelf.sh" >> ~/.zshrc
 ```
 
 ## NeoVim (Basic)
-
 ```bash
-ln -s nvim ~/.config/nvim.basic
-mkdir ~/.nvimundo
+mkdir -p ~/.nvimundo ~/.config/nvim/lua
+ln -sf ~/opt/shelf/nvim/basic.lua      ~/.config/nvim/init.lua
+ln -sf ~/opt/shelf/nvim/lua/quiteclose ~/.config/nvim/lua/quiteclose
 ```
 
 ## NeoVim IDE Installation
 *   Install `MesloLGSNerdFontMono-Regular.ttf` (Or some other [Nerd Font](https://github.com/ryanoasis/nerd-fonts/))
-*   Install packages:
+*   Setup basic config:
     ```bash
-    pacman -S cargo composer curl fd go jdk-openjdk julia lua lua-jsregexp lua51 lua51-jsregexp luarocks neovim perl php ruby tree-sitter tree-sitter-cli wget
+    mkdir -p ~/.nvimundo ~/.config/nvim/lua
+    ln -sf ~/opt/shelf/nvim/basic.lua      ~/.config/nvim/init.lua
+    ln -sf ~/opt/shelf/nvim/lua/quiteclose ~/.config/nvim/lua/quiteclose
     ```
-*   Link config:
+*   Install required packages:
+    *   On Linux:
+        ```bash
+        pacman -S cargo composer curl fd go jdk-openjdk julia lua lua-jsregexp lua51 lua51-jsregexp luarocks neovim perl php ruby tree-sitter tree-sitter-cli wget
+        ```
+    *   On MacOS:
+        1.  Install available packages:
+            ```bash
+            brew install composer curl fd go julia lua luajit luarocks openjdk neovim perl php python3 rip-grep ruby rust tree-sitter wget
+            ```
+        0.  Build `lua5.1` from source:
+            ```
+            pushd $(mktemp -d)
+            curl -O https://www.lua.org/ftp/lua-5.1.5.tar.gz
+            tar xzf lua-5.1.5.tar.gz
+            cd lua-5.1.5
+            make macosx
+            mkdir ~/opt
+            make INSTALL_TOP=$HOME/opt/lua@5.1 install
+            ln -s ~/opt/lua@5.1/bin/lua ~/bin/lua5.1
+            popd
+            ```
+*   Get `:checkhealth` passing inside `nvim`
+*   Link plugin config:
     ```bash
-    ln -s nvim ~/.config/nvim
-    mkdir ~/.nvimundo
+    ln -sf ~/opt/shelf/nvim/init.lua    ~/.config/nvim/init.lua
+    ln -sf ~/opt/shelf/nvim/lua/plugins ~/.config/nvim/lua/plugins
     ```
 *   Run `:Lazy` and Sync plugins.
 *   Run `:checkhealth` and resolve any issues.
 *   Run `:TSInstall all` to update tree-sitter parsers.
-
+*   Run `:checkhealth` and resolve any issues.
