@@ -1,65 +1,78 @@
--- Indentation settings by Filetype
+-- indentation settings by Filetype
 local PER_TAB = 'per-tab'
 local SPACES = 'spaces'
-local DEFAULT = { width = 2, fill = SPACES }
-
-local STYLE_FILETYPES = {
-  {2, SPACES,   'cmake,css,fish,handlebars,html,javascript,javascriptreact,' ..
-                'json,less,lua,proto,scheme,scss,sh,sql,svelte,terraform' ..
-                'toml,typescript,typescriptreact,vue,xml,yaml,zsh'},
-  {4, SPACES,   'ada,ansible,clojure,cs,csharp,elixir,erlang,fortran,' ..
-                'groovy,haskell,java,kotlin,latex,markdown,ocaml,perl,php,' ..
-                'python,rego,ruby,rust,scala,swift,tex,text,zig' },
-  {4, PER_TAB,  'asm,dockerfile,go,makefile,nasm,verilog,vhdl' },
-  {8, PER_TAB,  'c,cpp,objc,objcpp' },
-}
-
--- Filetypes to exclude from indentation effects
-local IGNORED_FILETYPES = {
-  'checkhealth',
-  'dashboard',
-  'diffviewfiles',
-  'fugitive',
-  'gitcommit',
-  'gitrebase',
-  'help',
-  'lspinfo',
-  'make',
-  'neotree',
-  'netrw',
-  'nvimtree',
-  'outline',
-  'packer',
-  'qf',
-  'startify',
-  'telescopeprompt',
-  'telescoperesults',
-  'toggleterm',
-  'undotree',
-}
-
--- Indentation settings for each fill-style
-local INDENT = {
-  [SPACES] = {
-    expandtab = true,
-    listchars = { lead = ' ', nbsp = '~', tab = '··', trail = '·' },
+local CONFIG = {
+  default = {
+    width = 2, fill = SPACES,
   },
-  [PER_TAB] = {
-    expandtab = false,
-    listchars = { lead = '·', nbsp = '~', tab = '  ', trail = '·' },
+  filetype = {
+    {2, SPACES,  'cmake,css,fish,handlebars,html,javascript,javascriptreact,' ..
+                 'json,less,lua,proto,scheme,scss,sh,sql,svelte,terraform' ..
+                 'toml,typescript,typescriptreact,vue,xml,yaml,zsh'},
+    {4, SPACES,  'ada,ansible,clojure,cs,csharp,elixir,erlang,fortran,' ..
+                 'groovy,haskell,java,kotlin,latex,markdown,ocaml,perl,php,' ..
+                 'python,rego,ruby,rust,scala,swift,tex,text,zig' },
+    {4, PER_TAB, 'asm,dockerfile,go,makefile,nasm,verilog,vhdl' },
+    {8, PER_TAB, 'c,cpp,objc,objcpp' },
+  },
+  ignore = {
+    'checkhealth',
+    'dashboard',
+    'diffviewfiles',
+    'fugitive',
+    'gitcommit',
+    'gitrebase',
+    'help',
+    'lspinfo',
+    'make',
+    'neotree',
+    'netrw',
+    'nvimtree',
+    'outline',
+    'packer',
+    'qf',
+    'startify',
+    'telescopeprompt',
+    'telescoperesults',
+    'toggleterm',
+    'undotree',
+  },
+  style = {
+    [SPACES] = {
+      expandtab = true,
+      listchars = { lead = ' ', nbsp = '~', tab = '··', trail = '·' },
+    },
+    [PER_TAB] = {
+      expandtab = false,
+      listchars = { lead = '·', nbsp = '~', tab = '  ', trail = '·' },
+    },
   },
 }
 
 -- List any styled (true) or ignored (false) filetypes
 local STYLED = {}
-for _, style in ipairs(STYLE_FILETYPES) do
+for _, style in ipairs(CONFIG.filetype) do
   local filetype_csv = style[3]
   for filetype in filetype_csv:gmatch('[^,]+') do
     STYLED[filetype] = true
   end
 end
-for _, filetype in ipairs(IGNORED_FILETYPES) do
+
+-- List any ignored (true) filetypes
+local IGNORED = {}
+for _, filetype in ipairs(CONFIG.ignore) do
   STYLED[filetype] = false
+  IGNORED[filetype] = true
+end
+
+-- Set indentation for a given scope (vim.opt or vim.opt_local)
+local function set_indent(width, fill, scope)
+  if IGNORED[vim.bo.filetype] then return end
+  scope = scope or vim.opt_local
+  scope.shiftwidth = width
+  scope.tabstop    = width
+  scope.expandtab  = CONFIG.style[fill].expandtab
+  scope.listchars  = CONFIG.style[fill].listchars
 end
 
 -- Cache results of relative_path to avoid recomputing
@@ -99,25 +112,28 @@ end
 
 -- Post a message with the indentation details
 local function post(width, fill)
-  local buffer = vim.api.nvim_buf_get_name(vim.api.nvim_get_current_buf())
+  local buffer   = vim.api.nvim_buf_get_name(vim.api.nvim_get_current_buf())
   local relative = function() return relative_path(buffer) end
-  local filename = vim.fn.fnamemodify(buffer, ':t')
-  local columns = vim.api.nvim_get_option('columns')
-  local margin = 12 -- trial and error
+  local columns  = vim.api.nvim_get_option('columns')
+  local margin   = 12 -- trial and error
   local viewport = columns - margin
+  local filename = vim.fn.fnamemodify(buffer, ':t')
+  local filetype = vim.bo.filetype
+  local indent   = 'Indent ' .. width .. ' ' .. fill
   local breaking = function(str) return vim.fn.strdisplaywidth(str) > viewport end
-  local message = ""
+  local quoted   = function(str) return '"' .. str .. '" ' end
+  local message  = ""
   -- Gradually try evermore informative (longer) messages
   local proposals = {
-    function() return 'Indent ' .. width .. ' ' .. fill .. '.' end,
-    function() return 'Indent ' .. width .. ' ' .. fill .. ', ft: ' .. vim.bo.filetype end,
-    function() return 'Indent ' .. width .. ' ' .. fill .. ', filetype: ' .. vim.bo.filetype end,
-    function() return '"' .. filename .. '" Indent ' .. width .. ' ' .. fill .. '.' end,
-    function() return '"' .. filename .. '" Indent ' .. width .. ' ' .. fill .. ', ft: ' .. vim.bo.filetype end,
-    function() return '"' .. filename .. '" Indent ' .. width .. ' ' .. fill .. ', filetype: ' .. vim.bo.filetype end,
-    function() return '"' .. relative() .. '" Indent ' .. width .. ' ' .. fill .. '.' end,
-    function() return '"' .. relative() .. '" Indent ' .. width .. ' ' .. fill .. ', ft: ' .. vim.bo.filetype end,
-    function() return '"' .. relative() .. '" Indent ' .. width .. ' ' .. fill .. ', filetype: ' .. vim.bo.filetype end,
+    function() return indent .. '.' end,
+    function() return indent .. ', ft: ' .. filetype end,
+    function() return indent .. ', filetype: ' .. filetype end,
+    function() return quoted(filename) .. indent .. '.' end,
+    function() return quoted(filename) .. indent .. ', ft: ' .. filetype end,
+    function() return quoted(filename) .. indent .. ', filetype: ' .. filetype end,
+    function() return quoted(relative()) .. indent .. '.' end,
+    function() return quoted(relative()) .. indent .. ', ft: ' .. filetype end,
+    function() return quoted(relative()) .. indent .. ', filetype: ' .. filetype end,
   }
   for _, proposal in ipairs(proposals) do
     local candidate = proposal()
@@ -131,16 +147,6 @@ local function post(width, fill)
   end
 end
 
--- Set indentation for a given scope (vim.opt or vim.opt_local)
-local function set_indent(width, fill, scope)
-  if STYLED[vim.bo.filetype] == false then return end
-  scope = scope or vim.opt_local
-  scope.shiftwidth = width
-  scope.tabstop    = width
-  scope.expandtab  = INDENT[fill].expandtab
-  scope.listchars  = INDENT[fill].listchars
-end
-
 -- Return a callback that sets indent and prints a status message
 local function deferred_indent(width, fill)
   return function()
@@ -152,14 +158,14 @@ local function deferred_indent(width, fill)
 end
 
 -- Apply default indentation globally
-vim.filetype.plugin = true
-set_indent(DEFAULT.width, DEFAULT.fill, vim.opt)
+set_indent(CONFIG.default.width, CONFIG.default.fill, vim.opt)
 
 -- Setup autocommands
+vim.filetype.plugin = true
 vim.api.nvim_create_augroup('FiletypeIndent', { clear = true })
 
 -- Filetype-specific rules
-for _, style in ipairs(STYLE_FILETYPES) do
+for _, style in ipairs(CONFIG.filetype) do
   local width, fill, pattern = style[1], style[2], style[3]
   vim.api.nvim_create_autocmd('Filetype', {
     group = 'FiletypeIndent',
@@ -174,7 +180,9 @@ vim.api.nvim_create_autocmd('Filetype', {
   pattern = '*',
   callback = function()
     if STYLED[vim.bo.filetype] == nil then
-      vim.schedule(deferred_indent(DEFAULT.width, DEFAULT.fill))
+      vim.schedule(deferred_indent(CONFIG.default.width, CONFIG.default.fill))
     end
   end,
 })
+
+return CONFIG
