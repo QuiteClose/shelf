@@ -18,14 +18,14 @@ vim.keymap.set('n', 'n', 'nzzzv')
 vim.keymap.set('n', 'N', 'Nzzzv')
 
 -- Deletes selection (to blackhole) and puts previously yanked text
-vim.keymap.set('x', '<leader>p', [['_dP]])
+vim.keymap.set('x', '<leader>p', '"_dP')
 
 -- Delete without yanking (to blackhole)
-vim.keymap.set({'n', 'v'}, '<leader>d', [['_d]])
+vim.keymap.set({'n', 'v'}, '<leader>d', '"_d')
 
 -- Yank to system clipboard (Y for the whole line)
-vim.keymap.set({'n', 'v'}, '<leader>y', [['+y]])
-vim.keymap.set('n', '<leader>Y', [['+Y]])
+vim.keymap.set({'n', 'v'}, '<leader>y', '"+y')
+vim.keymap.set('n', '<leader>Y', '"+Y')
 
 -- Begin search/replace with the word under the cursor
 vim.keymap.set('n', '<leader>s', [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]])
