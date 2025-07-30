@@ -1,11 +1,21 @@
 # Shelf
-Provides config and utilities for a Shell environment.
+Useful shell functions & IDE setup.
 
 ## Start
 Install the repo:
 ```
 mkdir ~/opt
 git clone git@github.com:QuiteClose/shelf.git ~/opt/shelf
+```
+
+## Shell Functions
+Build the `shelf.sh` script from the `shelf/*.sh` files:
+```bash
+./build.sh > ./shelf.sh
+```
+Source the `shelf.sh` file in your `~/.zshrc`:
+```
+echo "source ~/opt/shelf/shelf.sh" >> ~/.zshrc
 ```
 
 ## Ghostty
@@ -18,16 +28,6 @@ Config files etc. for Ghostty terminal emulator.
     ```
     ln -s ~/opt/shelf/ghostty/config ~/Library/Application\ Support/com.mitchellh.ghostty/config
     ```
-
-## Shell Utilities
-Build the `shelf.sh` script from the `shelf/*.sh` files:
-```bash
-./build.sh > ./shelf.sh
-```
-Source the `shelf.sh` file in your `~/.zshrc`:
-```
-echo "source ~/opt/shelf/shelf.sh" >> ~/.zshrc
-```
 
 ## NeoVim (Basic)
 ```bash
