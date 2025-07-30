@@ -20,6 +20,10 @@ Config files etc. for Ghostty terminal emulator.
     ```
 
 ## Shell Utilities
+Build the `shelf.sh` script from the `shelf/*.sh` files:
+```bash
+./build.sh > ./shelf.sh
+```
 Source the `shelf.sh` file in your `~/.zshrc`:
 ```
 echo "source ~/opt/shelf/shelf.sh" >> ~/.zshrc
