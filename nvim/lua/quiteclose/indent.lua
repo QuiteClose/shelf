@@ -88,7 +88,7 @@ local function relative_path(target)
     if child ~= absolute then return child end
     local function split(path)
       local parts = {}
-      for part in path:gmatch("[^/]+") do
+      for part in path:gmatch('[^/]+') do
         table.insert(parts, part)
       end
       return parts
@@ -113,28 +113,27 @@ end
 -- Post a message with the indentation details
 local function post(width, fill)
   local buffer   = vim.api.nvim_buf_get_name(vim.api.nvim_get_current_buf())
-  local relative = function() return relative_path(buffer) end
   local columns  = vim.api.nvim_get_option('columns')
   local margin   = 12 -- trial and error
   local viewport = columns - margin
-  local filename = vim.fn.fnamemodify(buffer, ':t')
   local filetype = vim.bo.filetype
   local indent   = 'Indent ' .. width .. ' ' .. fill
+  local relative = function() return '"' .. relative_path(buffer) .. '" ' end
   local breaking = function(str) return vim.fn.strdisplaywidth(str) > viewport end
-  local quoted   = function(str) return '"' .. str .. '" ' end
-  local message  = ""
+  local filename = '"' .. vim.fn.fnamemodify(buffer, ':t') .. '" '
   -- Gradually try evermore informative (longer) messages
   local proposals = {
     function() return indent .. '.' end,
     function() return indent .. ', ft: ' .. filetype end,
     function() return indent .. ', filetype: ' .. filetype end,
-    function() return quoted(filename) .. indent .. '.' end,
-    function() return quoted(filename) .. indent .. ', ft: ' .. filetype end,
-    function() return quoted(filename) .. indent .. ', filetype: ' .. filetype end,
-    function() return quoted(relative()) .. indent .. '.' end,
-    function() return quoted(relative()) .. indent .. ', ft: ' .. filetype end,
-    function() return quoted(relative()) .. indent .. ', filetype: ' .. filetype end,
+    function() return filename .. indent .. '.' end,
+    function() return filename .. indent .. ', ft: ' .. filetype end,
+    function() return filename .. indent .. ', filetype: ' .. filetype end,
+    function() return relative() .. indent .. '.' end,
+    function() return relative() .. indent .. ', ft: ' .. filetype end,
+    function() return relative() .. indent .. ', filetype: ' .. filetype end,
   }
+  local message  = ""
   for _, proposal in ipairs(proposals) do
     local candidate = proposal()
     if breaking(candidate) then break end
@@ -147,7 +146,7 @@ local function post(width, fill)
   end
 end
 
--- Return a callback that sets indent and prints a status message
+-- Return a callback to set_indent (and post about it)
 local function deferred_indent(width, fill)
   return function()
     vim.schedule(function()
