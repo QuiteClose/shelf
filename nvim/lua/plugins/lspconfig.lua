@@ -2,12 +2,17 @@ return {
   'neovim/nvim-lspconfig',
   config = function()
     local lspconfig = require('lspconfig')
-
-    lspconfig.lua_ls.setup({
+    lspconfig.lua_ls.setup {
       on_attach = require('quiteclose/keymap').on_lsp_attach,
-    })
-
-    lspconfig.pylsp.setup({
+      settings = {
+        Lua = {
+          diagnostics = {
+            globals = { 'vim' },
+          },
+        },
+      },
+    }
+    lspconfig.pylsp.setup {
       settings = {
         pylsp = {
           plugins = {
@@ -27,6 +32,6 @@ return {
           },
         },
       },
-    })
+    }
   end,
 }
