@@ -102,6 +102,11 @@ local function post(width, fill)
   local buffer = vim.api.nvim_buf_get_name(vim.api.nvim_get_current_buf())
   local relative = function() return relative_path(buffer) end
   local filename = vim.fn.fnamemodify(buffer, ':t')
+  local columns = vim.api.nvim_get_option('columns')
+  local margin = 12 -- trial and error
+  local viewport = columns - margin
+  local breaking = function(str) return vim.fn.strdisplaywidth(str) > viewport end
+  local message = ""
   -- Gradually try evermore informative (longer) messages
   local proposals = {
     function() return 'Indent ' .. width .. ' ' .. fill .. '.' end,
@@ -114,11 +119,6 @@ local function post(width, fill)
     function() return '"' .. relative() .. '" Indent ' .. width .. ' ' .. fill .. ', ft: ' .. vim.bo.filetype end,
     function() return '"' .. relative() .. '" Indent ' .. width .. ' ' .. fill .. ', filetype: ' .. vim.bo.filetype end,
   }
-  local columns = vim.api.nvim_get_option('columns')
-  local margin = 12 -- trial and errort 
-  local viewport = columns - margin
-  local breaking = function(str) return vim.fn.strdisplaywidth(str) > viewport end
-  local message = ""
   for _, proposal in ipairs(proposals) do
     local candidate = proposal()
     if breaking(candidate) then break end
