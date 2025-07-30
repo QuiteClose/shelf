@@ -4,17 +4,41 @@ local SPACES = 'spaces'
 local DEFAULT = { width = 2, fill = SPACES }
 
 local STYLE_FILETYPES = {
-  {2, SPACES,  'css,javascript,html,scss'},
-  {4, SPACES,  'markdown,python,text' },
-  {2, PER_TAB, 'zig' },
-  {4, PER_TAB, 'Dockerfile,sh,go,Makefile' },
+  {2, SPACES,   'cmake,css,fish,handlebars,html,javascript,javascriptreact,' ..
+                'json,less,lua,proto,scheme,scss,sh,sql,svelte,terraform' ..
+                'toml,typescript,typescriptreact,vue,xml,yaml,zsh'},
+  {4, SPACES,   'ada,ansible,clojure,cs,csharp,elixir,erlang,fortran,' ..
+                'groovy,haskell,java,kotlin,latex,markdown,ocaml,perl,php,' ..
+                'python,rego,ruby,rust,scala,swift,tex,text,zig' },
+  {4, PER_TAB,  'asm,dockerfile,go,makefile,nasm,verilog,vhdl' },
+  {8, PER_TAB,  'c,cpp,objc,objcpp' },
 }
 
--- Filetypes to exclude from default indentation
+-- Filetypes to exclude from indentation effects
 local IGNORED_FILETYPES = {
+  'checkhealth',
+  'dashboard',
+  'diffviewfiles',
+  'fugitive',
+  'gitcommit',
+  'gitrebase',
+  'help',
+  'lspinfo',
+  'make',
+  'neotree',
   'netrw',
+  'nvimtree',
+  'outline',
+  'packer',
+  'qf',
+  'startify',
+  'telescopeprompt',
+  'telescoperesults',
+  'toggleterm',
+  'undotree',
 }
 
+-- Indentation settings for each fill-style
 local INDENT = {
   [SPACES] = {
     expandtab = true,
@@ -26,7 +50,7 @@ local INDENT = {
   },
 }
 
--- List any styled (or ignored) filetypes
+-- List any styled (true) or ignored (false) filetypes
 local STYLED = {}
 for _, style in ipairs(STYLE_FILETYPES) do
   local filetype_csv = style[3]
@@ -109,6 +133,7 @@ end
 
 -- Set indentation for a given scope (vim.opt or vim.opt_local)
 local function set_indent(width, fill, scope)
+  if STYLED[vim.bo.filetype] == false then return end
   scope = scope or vim.opt_local
   scope.shiftwidth = width
   scope.tabstop    = width
