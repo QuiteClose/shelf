@@ -18,6 +18,33 @@ Source the `shelf.sh` file in your `~/.zshrc`:
 echo "source ~/opt/shelf/shelf.sh" >> ~/.zshrc
 ```
 
+### GNU coreutils
+On MacOS it is useful to install GNU equivalents of e.g. sed:
+```bash
+brew install coreutils findutils gawk gnu-sed grep
+```
+Then add the following to your `~/.zshrc`:
+```bash
+
+# MacOS:
+export PATH="/opt/homebrew/opt/coreutils/libexec/gnubin:$PATH"
+export PATH="/opt/homebrew/opt/findutils/libexec/gnubin:$PATH"
+export PATH="/opt/homebrew/opt/grep/libexec/gnubin:$PATH"
+export PATH="/opt/homebrew/opt/gawk/libexec/gnubin:$PATH"
+export PATH="/opt/homebrew/opt/gnu-sed/libexec/gnubin:$PATH"
+
+# Intel MacOS:
+# export PATH="/usr/local/opt/coreutils/libexec/gnubin:$PATH"
+# export PATH="/usr/local/opt/findutils/libexec/gnubin:$PATH"
+# ...etc.
+
+# Optional:
+export PATH=$HOME/bin:$PATH
+
+# Source your shelf.sh script if needed
+source ~/opt/shelf/shelf.sh
+```
+
 ## Ghostty
 Config files etc. for Ghostty terminal emulator.
 *   Install on Linux:
