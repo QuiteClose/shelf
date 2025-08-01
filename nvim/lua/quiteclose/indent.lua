@@ -1,19 +1,19 @@
 -- indentation settings by Filetype
-local PER_TAB = 'per-tab'
-local SPACES = 'spaces'
+local Spaces = 'spaces'
+local Tabs   = 'tabs'
 local CONFIG = {
   default = {
-    width = 2, fill = SPACES,
+    width = 4, fill = Spaces,
   },
   filetype = {
-    {2, SPACES,  'cmake,css,fish,handlebars,html,javascript,javascriptreact,' ..
-                 'json,less,lua,proto,scheme,scss,sh,sql,svelte,terraform' ..
-                 'toml,typescript,typescriptreact,vue,xml,yaml,zsh'},
-    {4, SPACES,  'ada,ansible,clojure,cs,csharp,elixir,erlang,fortran,' ..
-                 'groovy,haskell,java,kotlin,latex,markdown,ocaml,perl,php,' ..
-                 'python,rego,ruby,rust,scala,swift,tex,text,zig' },
-    {4, PER_TAB, 'asm,dockerfile,go,makefile,nasm,verilog,vhdl' },
-    {8, PER_TAB, 'c,cpp,objc,objcpp' },
+    {2, Spaces, 'cmake,css,fish,handlebars,html,javascript,javascriptreact,' ..
+                'json,less,lua,proto,scheme,scss,sh,sql,svelte,terraform' ..
+                'toml,typescript,typescriptreact,vue,xml,yaml,zsh'},
+    {4, Spaces, 'ada,ansible,clojure,cs,csharp,elixir,erlang,fortran,' ..
+                'groovy,haskell,java,kotlin,latex,markdown,ocaml,perl,php,' ..
+                'python,rego,ruby,rust,scala,swift,tex,text,zig' },
+    {4, Tabs,   'asm,dockerfile,go,makefile,nasm,verilog,vhdl' },
+    {8, Tabs,   'c,cpp,objc,objcpp' },
   },
   ignore = {
     'checkhealth',
@@ -37,12 +37,15 @@ local CONFIG = {
     'toggleterm',
     'undotree',
   },
+  post = true, -- post messages about indentation
   style = {
-    [SPACES] = {
+    [Spaces] = {
+      name = 'spaces',
       expandtab = true,
-      listchars = { lead = ' ', nbsp = '~', tab = '··', trail = '·' },
+      listchars = { lead = ' ', nbsp = '~', tab = '» ', trail = '·' },
     },
-    [PER_TAB] = {
+    [Tabs] = {
+      name = 'per-tab',
       expandtab = false,
       listchars = { lead = '·', nbsp = '~', tab = '  ', trail = '·' },
     },
@@ -69,6 +72,7 @@ end
 local function set_indent(width, fill, scope)
   if IGNORED[vim.bo.filetype] then return end
   scope = scope or vim.opt_local
+  scope.list       = true
   scope.shiftwidth = width
   scope.tabstop    = width
   scope.expandtab  = CONFIG.style[fill].expandtab
@@ -116,11 +120,11 @@ local function post(width, fill)
   local columns  = vim.api.nvim_get_option('columns')
   local margin   = 12 -- trial and error
   local viewport = columns - margin
-  local filetype = vim.bo.filetype
-  local indent   = 'Indent ' .. width .. ' ' .. fill
-  local relative = function() return '"' .. relative_path(buffer) .. '" ' end
   local breaking = function(str) return vim.fn.strdisplaywidth(str) > viewport end
+  local relative = '"' .. relative_path(buffer) .. '" '
   local filename = '"' .. vim.fn.fnamemodify(buffer, ':t') .. '" '
+  local filetype = vim.bo.filetype
+  local indent   = 'Indent ' .. width .. ' ' .. CONFIG.style[fill].name
   -- Gradually try evermore informative (longer) messages
   local proposals = {
     function() return indent .. '.' end,
@@ -129,9 +133,9 @@ local function post(width, fill)
     function() return filename .. indent .. '.' end,
     function() return filename .. indent .. ', ft: ' .. filetype end,
     function() return filename .. indent .. ', filetype: ' .. filetype end,
-    function() return relative() .. indent .. '.' end,
-    function() return relative() .. indent .. ', ft: ' .. filetype end,
-    function() return relative() .. indent .. ', filetype: ' .. filetype end,
+    function() return relative .. indent .. '.' end,
+    function() return relative .. indent .. ', ft: ' .. filetype end,
+    function() return relative .. indent .. ', filetype: ' .. filetype end,
   }
   local message  = ""
   for _, proposal in ipairs(proposals) do
@@ -151,7 +155,7 @@ local function deferred_indent(width, fill)
   return function()
     vim.schedule(function()
       set_indent(width, fill)
-      post(width, fill)
+      if CONFIG.post then post(width, fill) end
     end)
   end
 end
