@@ -62,26 +62,14 @@ repo() {
   local SERVER=""       # First part of URI, e.g. git@github.com
   local SELECT=""       # Selects repos on the server, e.g. quiteclose/shelf
   case "$1" in
-    -h|--help)
-      repo_usage; return 0
-      ;;
-    -b|--browse)
-      ACTION="browse"; REMOTE="$2"
-      ;;
-    --clone)
-      ACTION="clone"; REMOTE="$2"; SEARCH="$3"
-      ;;
-    -c) ORDER="clone";    shift 1; SEARCH="$*"
-      ;;
-    -d) ORDER="history";  shift 1; SEARCH="$*"
-      ;;
-    -g) ORDER="activity"; shift 1; SEARCH="$*"
-      ;;
-    -n) ORDER="name";     shift 1; SEARCH="$*"
-      ;;
-    *)
-      SEARCH="$*"
-      ;;
+    -h|--help)   ACTION="usage"; ;;
+    -b|--browse) ACTION="browse"; REMOTE="$2"; ;;
+    --clone)     ACTION="clone";  REMOTE="$2"; SEARCH="$3" ;;
+    -c) ORDER="clone";    shift 1; SEARCH="$*" ;;
+    -d) ORDER="history";  shift 1; SEARCH="$*" ;;
+    -g) ORDER="activity"; shift 1; SEARCH="$*" ;;
+    -n) ORDER="name";     shift 1; SEARCH="$*" ;;
+    *)  SEARCH="$*" ;;
   esac
   case "${ACTION}" in
     browse)
@@ -201,8 +189,7 @@ repo() {
     else
       repo_stat "${SELECT}" >> "${REPO_LIST}"
     fi
-    echo "${PWD}  ${REPO_ROOT}/${SELECT}" | sed "s|${HOME}|~|g"
-    cd "${REPO_ROOT}/${SELECT}"
+    changedir "${REPO_ROOT}/${SELECT}"
   fi
   return 0
 }
