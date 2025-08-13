@@ -6,6 +6,7 @@ font-family = MesloLGS Nerd Font Mono
 font-size = 20
 font-thicken = true
 font-thicken-strength = 10
-theme = iTerm2 Solarized Dark
+split-divider-color = #657b83
+theme = dark:iTerm2 Solarized Dark,light:iTerm2 Solarized Light
 window-decoration = auto
 ##################################################
