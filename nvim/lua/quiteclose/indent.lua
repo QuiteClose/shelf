@@ -70,7 +70,17 @@ end
 
 -- Set indentation for a given scope (vim.opt or vim.opt_local)
 local function set_indent(width, fill, scope)
-  if IGNORED[vim.bo.filetype] then return end
+  if IGNORED[vim.bo.filetype] then 
+    -- For UI contexts (ignored filetypes), don't show hidden characters
+    scope = scope or vim.opt_local
+    scope.list = false
+    scope.listchars = {}
+    scope.shiftwidth = width
+    scope.tabstop    = width
+    scope.expandtab  = CONFIG.style[fill].expandtab
+    return 
+  end
+  
   scope = scope or vim.opt_local
   scope.list       = true
   scope.shiftwidth = width
@@ -184,6 +194,39 @@ vim.api.nvim_create_autocmd('Filetype', {
   callback = function()
     if STYLED[vim.bo.filetype] == nil then
       vim.schedule(deferred_indent(CONFIG.default.width, CONFIG.default.fill))
+    end
+  end,
+})
+
+-- Ensure indentation is applied when buffers are opened
+vim.api.nvim_create_autocmd({'BufReadPost', 'BufNewFile', 'BufEnter'}, {
+  group = 'FiletypeIndent',
+  pattern = '*',
+  callback = function()
+    -- Find the appropriate style for this filetype
+    local filetype = vim.bo.filetype
+    if IGNORED[filetype] then
+      -- Apply settings for UI filetypes (with no listchars)
+      set_indent(CONFIG.default.width, CONFIG.default.fill)
+      return
+    end
+    
+    -- Check if we have a specific style for this filetype
+    for _, style in ipairs(CONFIG.filetype) do
+      local width, fill, pattern = style[1], style[2], style[3]
+      for ft in pattern:gmatch('[^,]+') do
+        if ft == filetype then
+          set_indent(width, fill)
+          if CONFIG.post then post(width, fill) end
+          return
+        end
+      end
+    end
+    
+    -- Use default if no specific style found
+    if STYLED[filetype] == nil then
+      set_indent(CONFIG.default.width, CONFIG.default.fill)
+      if CONFIG.post then post(CONFIG.default.width, CONFIG.default.fill) end
     end
   end,
 })
