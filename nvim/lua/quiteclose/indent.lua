@@ -55,9 +55,9 @@ local CONFIG = {
 -- List any styled (true) or ignored (false) filetypes
 local STYLED = {}
 for _, style in ipairs(CONFIG.filetype) do
-  local filetype_csv = style[3]
+  local width, fill, filetype_csv = style[1], style[2], style[3]
   for filetype in filetype_csv:gmatch('[^,]+') do
-    STYLED[filetype] = true
+    STYLED[filetype] = {width = width, fill = fill}
   end
 end
 
@@ -203,7 +203,6 @@ vim.api.nvim_create_autocmd({'BufReadPost', 'BufNewFile', 'BufEnter'}, {
   group = 'FiletypeIndent',
   pattern = '*',
   callback = function()
-    -- Find the appropriate style for this filetype
     local filetype = vim.bo.filetype
     if IGNORED[filetype] then
       -- Apply settings for UI filetypes (with no listchars)
@@ -212,19 +211,12 @@ vim.api.nvim_create_autocmd({'BufReadPost', 'BufNewFile', 'BufEnter'}, {
     end
     
     -- Check if we have a specific style for this filetype
-    for _, style in ipairs(CONFIG.filetype) do
-      local width, fill, pattern = style[1], style[2], style[3]
-      for ft in pattern:gmatch('[^,]+') do
-        if ft == filetype then
-          set_indent(width, fill)
-          if CONFIG.post then post(width, fill) end
-          return
-        end
-      end
-    end
-    
-    -- Use default if no specific style found
-    if STYLED[filetype] == nil then
+    local style = STYLED[filetype]
+    if style then
+      set_indent(style.width, style.fill)
+      if CONFIG.post then post(style.width, style.fill) end
+    elseif style == nil then
+      -- Use default if no specific style found
       set_indent(CONFIG.default.width, CONFIG.default.fill)
       if CONFIG.post then post(CONFIG.default.width, CONFIG.default.fill) end
     end
