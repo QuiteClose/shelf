@@ -55,9 +55,9 @@ local CONFIG = {
 -- List any styled (true) or ignored (false) filetypes
 local STYLED = {}
 for _, style in ipairs(CONFIG.filetype) do
-  local filetype_csv = style[3]
+  local width, fill, filetype_csv = style[1], style[2], style[3]
   for filetype in filetype_csv:gmatch('[^,]+') do
-    STYLED[filetype] = true
+    STYLED[filetype] = {width = width, fill = fill}
   end
 end
 
@@ -70,7 +70,17 @@ end
 
 -- Set indentation for a given scope (vim.opt or vim.opt_local)
 local function set_indent(width, fill, scope)
-  if IGNORED[vim.bo.filetype] then return end
+  if IGNORED[vim.bo.filetype] then 
+    -- For UI contexts (ignored filetypes), don't show hidden characters
+    scope = scope or vim.opt_local
+    scope.list = false
+    scope.listchars = {}
+    scope.shiftwidth = width
+    scope.tabstop    = width
+    scope.expandtab  = CONFIG.style[fill].expandtab
+    return 
+  end
+  
   scope = scope or vim.opt_local
   scope.list       = true
   scope.shiftwidth = width
@@ -184,6 +194,31 @@ vim.api.nvim_create_autocmd('Filetype', {
   callback = function()
     if STYLED[vim.bo.filetype] == nil then
       vim.schedule(deferred_indent(CONFIG.default.width, CONFIG.default.fill))
+    end
+  end,
+})
+
+-- Ensure indentation is applied when buffers are opened
+vim.api.nvim_create_autocmd({'BufReadPost', 'BufNewFile', 'BufEnter'}, {
+  group = 'FiletypeIndent',
+  pattern = '*',
+  callback = function()
+    local filetype = vim.bo.filetype
+    if IGNORED[filetype] then
+      -- Apply settings for UI filetypes (with no listchars)
+      set_indent(CONFIG.default.width, CONFIG.default.fill)
+      return
+    end
+    
+    -- Check if we have a specific style for this filetype
+    local style = STYLED[filetype]
+    if style then
+      set_indent(style.width, style.fill)
+      if CONFIG.post then post(style.width, style.fill) end
+    elseif style == nil then
+      -- Use default if no specific style found
+      set_indent(CONFIG.default.width, CONFIG.default.fill)
+      if CONFIG.post then post(CONFIG.default.width, CONFIG.default.fill) end
     end
   end,
 })

@@ -147,6 +147,10 @@ repo() {
     *)  SEARCH="$*" ;;
   esac
   case "${ACTION}" in
+    usage)
+      repo_usage
+      return 0
+      ;;
     browse)
       if [[ -z "${REMOTE}" ]]; then
         tree -dL3 "${REPO_ROOT}" | less
