@@ -137,7 +137,7 @@ repo() {
   local SERVER=""       # First part of URI, e.g. git@github.com
   local SELECT=""       # Selects repos on the server, e.g. quiteclose/shelf
   case "$1" in
-    -h|--help)   ACTION="usage"; ;;
+    -h|--help)   repo_usage; return 0 ;;
     -b|--browse) ACTION="browse"; REMOTE="$2"; ;;
     --clone)     ACTION="clone";  REMOTE="$2"; SEARCH="$3" ;;
     -c) ORDER="clone";    shift 1; SEARCH="$*" ;;
