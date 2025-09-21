@@ -1,8 +1,7 @@
 return {
   'neovim/nvim-lspconfig',
   config = function()
-    local lspconfig = require('lspconfig')
-    lspconfig.lua_ls.setup {
+    vim.lsp.config('lua_ls', {
       on_attach = require('quiteclose/keymap').on_lsp_attach,
       settings = {
         Lua = {
@@ -11,8 +10,8 @@ return {
           },
         },
       },
-    }
-    lspconfig.pylsp.setup {
+    })
+    vim.lsp.config('pylsp', {
       settings = {
         pylsp = {
           plugins = {
@@ -32,6 +31,6 @@ return {
           },
         },
       },
-    }
+    })
   end,
 }
