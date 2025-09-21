@@ -15,28 +15,10 @@ local CONFIG = {
     {4, Tabs,   'asm,dockerfile,go,makefile,nasm,verilog,vhdl' },
     {8, Tabs,   'c,cpp,objc,objcpp' },
   },
-  ignore = {
-    'checkhealth',
-    'dashboard',
-    'diffviewfiles',
-    'fugitive',
-    'gitcommit',
-    'gitrebase',
-    'help',
-    'lspinfo',
-    'make',
-    'neotree',
-    'netrw',
-    'nvimtree',
-    'outline',
-    'packer',
-    'qf',
-    'startify',
-    'telescopeprompt',
-    'telescoperesults',
-    'toggleterm',
-    'undotree',
-  },
+  ignore = 'checkhealth,dashboard,diffviewfiles,fugitive,gitcommit,' ..
+           'gitrebase,help,lspinfo,make,neotree,netrw,nvimtree,outline,' ..
+           'packer,qf,startify,telescopeprompt,telescoperesults,toggleterm,' ..
+           'undotree',
   post = true, -- post messages about indentation
   style = {
     [Spaces] = {
@@ -52,31 +34,36 @@ local CONFIG = {
   },
 }
 
--- List any styled (true) or ignored (false) filetypes
-local STYLED = {}
-for _, style in ipairs(CONFIG.filetype) do
-  local filetype_csv = style[3]
-  for filetype in filetype_csv:gmatch('[^,]+') do
-    STYLED[filetype] = true
-  end
-end
-
 -- List any ignored (true) filetypes
 local IGNORED = {}
-for _, filetype in ipairs(CONFIG.ignore) do
-  STYLED[filetype] = false
+for filetype in CONFIG.ignore:gmatch('[^,]+') do
   IGNORED[filetype] = true
+end
+
+-- List any styled filetypes along with their width and fill setting
+local STYLED = {}
+for _, style in ipairs(CONFIG.filetype) do
+  local width, fill, filetype_csv = style[1], style[2], style[3]
+  for filetype in filetype_csv:gmatch('[^,]+') do
+    if not IGNORED[filetype] then
+      STYLED[filetype] = {width = width, fill = fill}
+    end
+  end
 end
 
 -- Set indentation for a given scope (vim.opt or vim.opt_local)
 local function set_indent(width, fill, scope)
-  if IGNORED[vim.bo.filetype] then return end
   scope = scope or vim.opt_local
-  scope.list       = true
   scope.shiftwidth = width
   scope.tabstop    = width
   scope.expandtab  = CONFIG.style[fill].expandtab
-  scope.listchars  = CONFIG.style[fill].listchars
+  if IGNORED[vim.bo.filetype] or scope == vim.opt then
+    scope.list      = false
+    scope.listchars = {}
+  else
+    scope.list       = true
+    scope.listchars  = CONFIG.style[fill].listchars
+  end
 end
 
 -- Cache results of relative_path to avoid recomputing
@@ -177,15 +164,15 @@ for _, style in ipairs(CONFIG.filetype) do
   })
 end
 
--- Catch-all for unconfigured filetypes
-vim.api.nvim_create_autocmd('Filetype', {
+-- Ensure indentation is applied when buffers are opened
+vim.api.nvim_create_autocmd({'BufNewFile', 'BufEnter'}, {
   group = 'FiletypeIndent',
   pattern = '*',
   callback = function()
-    if STYLED[vim.bo.filetype] == nil then
-      vim.schedule(deferred_indent(CONFIG.default.width, CONFIG.default.fill))
+    local style = STYLED[vim.bo.filetype]
+    if style then
+      set_indent(style.width, style.fill)
+      if CONFIG.post then post(style.width, style.fill) end
     end
   end,
 })
-
-return CONFIG
