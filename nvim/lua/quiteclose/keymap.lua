@@ -97,7 +97,7 @@ function Deferred.on_lsp_attach(_, bufnr)
   -- Workspace symbol search
   vim.keymap.set('n', '<leader>vws', vim.lsp.buf.workspace_symbol, opts)
   -- Show diagnostics in floating window
-  vim.keymap.set('n', '<leader>vd', vim.diagnostic.open_float, opts)
+  vim.keymap.set('n', '<leader>vdw', vim.diagnostic.open_float, opts)
   -- Go to next diagnostic
   vim.keymap.set('n', '[d', vim.diagnostic.goto_next, opts)
   -- Go to previous diagnostic
@@ -115,3 +115,5 @@ function Deferred.on_lsp_attach(_, bufnr)
 end
 
 return Deferred
+
+
