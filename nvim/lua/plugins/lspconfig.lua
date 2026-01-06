@@ -1,5 +1,6 @@
 return {
   'neovim/nvim-lspconfig',
+  ensure_installed = { "todotxt" },
   config = function()
     vim.lsp.config('lua_ls', {
       on_attach = require('quiteclose/keymap').on_lsp_attach,

@@ -1,4 +1,7 @@
 local Deferred = {}
+local function map(lhs, fn, desc)
+  vim.keymap.set("n", lhs, fn, { desc = desc, silent = true })
+end
 
 vim.keymap.set('n', '<leader>pv', vim.cmd.Ex)
 
@@ -71,6 +74,28 @@ function Deferred.after_plugin_telescope()
   vim.keymap.set('n', '<leader>vh', builtin.help_tags, {})
 end
 
+-- Calls commands from todotxt.nvim
+vim.keymap.set("n", "<leader>TT", "<cmd>TodoTxt<cr>")
+vim.keymap.set("n", "<leader>Tn", "<cmd>TodoTxt new<cr>", { desc = "New todo entry" })
+vim.keymap.set("n", "<leader>Td", "<cmd>DoneTxt<cr>", { desc = "Toggle done.txt" })
+vim.keymap.set("n", "<leader>Tg", "<cmd>TodoTxt ghost<cr>", { desc = "Toggle ghost text" })
+
+-- Called from ../plugins/todotxt.lua
+function Deferred.after_plugin_todotxt()
+  local ok, todotxt = pcall(require, "todotxt")
+  if not ok then
+    return
+  end
+  map("<leader>Tt", function() todotxt.toggle_todo_state() end, "Toggle task state")
+  map("<leader>Tp", function() todotxt.cycle_priority() end, "Cycle priority")
+  map("<leader>Tm", function() todotxt.move_done_tasks() end, "Move done tasks")
+  map("<leader>Tss", function() todotxt.sort_tasks() end, "Sort tasks (default)")
+  map("<leader>Tsp", function() todotxt.sort_tasks_by_priority() end, "Sort by priority")
+  map("<leader>Tsc", function() todotxt.sort_tasks_by_context() end, "Sort by context")
+  map("<leader>TsP", function() todotxt.sort_tasks_by_project() end, "Sort by project")
+  map("<leader>Tsd", function() todotxt.sort_tasks_by_due_date() end, "Sort by due date")
+end
+
 -- Called from ../plugins/fugitive.lua
 function Deferred.after_plugin_undotree()
   vim.keymap.set('n', '<leader>u', vim.cmd.UndotreeToggle)
@@ -115,5 +140,3 @@ function Deferred.on_lsp_attach(_, bufnr)
 end
 
 return Deferred
-
-
