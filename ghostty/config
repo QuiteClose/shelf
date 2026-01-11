@@ -3,7 +3,7 @@ keybind = f11=toggle_window_decorations
 ##################################################
 cursor-style = block
 font-family = MesloLGS Nerd Font Mono
-font-size = 20
+font-size = 14
 font-thicken = true
 font-thicken-strength = 10
 split-divider-color = #657b83
