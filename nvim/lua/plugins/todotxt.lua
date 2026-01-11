@@ -11,8 +11,8 @@ return {
     })
   end,
   opts = {
-    todotxt = "/Users/deaclose/workspaces/core.000000/daisy/todo.txt",
-    donetxt = "/Users/deaclose/workspaces/core.000000/daisy/done.txt",
+    todotxt = os.getenv("HOME") .. "/workspaces/core.000000/daisy/todo.txt",
+    donetxt = os.getenv("HOME") .. "/workspaces/core.000000/daisy/done.txt",
     ghost_text = {
       enable = true,
       mappings = {
