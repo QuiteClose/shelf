@@ -11,15 +11,15 @@ return {
     })
   end,
   opts = {
-    todotxt = os.getenv("HOME") .. "/workspaces/core.000000/daisy/todo.txt",
-    donetxt = os.getenv("HOME") .. "/workspaces/core.000000/daisy/done.txt",
+    todotxt = os.getenv("HOME") .. "/workspaces/daisy.000000/tasks/todo.txt",
+    donetxt = os.getenv("HOME") .. "/workspaces/daisy.000000/tasks/done.txt",
     ghost_text = {
       enable = true,
       mappings = {
-        ["(A)"] = "now",
-        ["(B)"] = "next",
-        ["(C)"] = "someday",
-        ["(D)"] = "deferred",
+        ["(A)"] = "Now",
+        ["(B)"] = "Next",
+        ["(C)"] = "Soon",
+        ["(D)"] = "Someday",
       },
       prefix = "~",
       highlight = "Comment",
