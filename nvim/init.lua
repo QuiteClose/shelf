@@ -10,5 +10,8 @@ vim.opt.rtp:prepend(lazypath)
 
 require('lazy').setup('plugins', {
   install = { colorscheme = { 'solarized' } },
-  checker = { enabled = true },
+  checker = {
+    enabled = true, -- Check for updates
+    frequency = 604800, -- Check once per week (in seconds)
+  },
 })
