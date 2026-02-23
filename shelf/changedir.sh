@@ -5,7 +5,7 @@
 
 changedir() {
   # Change the current working-directory to the given path
-  # posts a message to stderr about the change.
+  # and print the transition to stdout.
   local TARGET="$1"
   if [[ -z "${TARGET}" ]]; then
     TARGET="${HOME}"

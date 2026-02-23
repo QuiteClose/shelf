@@ -8,7 +8,7 @@ tempdir_usage() {
   Creates & searches tempdirs. Changes to that directory when only one matches.
 
   -c           Create a tempdir (optionally with a <LABEL>)
-  -p, --prune  Delete unused tempdirs.
+  -p, --prune  Delete empty tempdirs older than 7 days.
   -b, --browse Do not changedir.
   -t, --tree   View the tempdirs as a tree.
 
@@ -41,7 +41,7 @@ tempdir_usage() {
 "
 }
 
-TEMPDIR_ROOT="$(realpath -m ~/tempdirs)"
+TEMPDIR_ROOT="${SHELF_TEMPDIRS:-$(realpath -m ~/tempdirs)}"
 TEMPDIR_LIST="${TEMPDIR_ROOT}/_manifest.txt"
 TEMPDIR_FIND_PREFIX=( \
   \( \
@@ -68,6 +68,27 @@ tempdir_create() {
   mktemp -d -p "${TEMPDIR_ROOT}" "${STAMP}.XXXXXX" | sed "s|^${TEMPDIR_ROOT}/||" | tee -a "${TEMPDIR_LIST}"
 }
 
+tempdir_prune() {
+  tempdir_init
+  local PRUNED=0
+  while IFS= read -r dir; do
+    local FULL="${TEMPDIR_ROOT}/${dir}"
+    if [[ ! -d "${FULL}" ]]; then continue; fi
+    local CONTENTS
+    CONTENTS="$(find "${FULL}" -mindepth 1 -maxdepth 1 2>/dev/null)"
+    if [[ -z "${CONTENTS}" ]]; then
+      >&2 echo "Pruning empty tempdir: ${dir}"
+      rm -rf "${FULL}"
+      ((PRUNED++))
+    fi
+  done < <(find "${TEMPDIR_ROOT}" -mindepth 1 -maxdepth 1 -type d -mtime +7 -printf "%f\n")
+  if [[ "${PRUNED}" -gt 0 ]]; then
+    >&2 echo "Pruned ${PRUNED} empty tempdir(s). Resetting manifest."
+    tempdir_reset
+  else
+    >&2 echo "Nothing to prune."
+  fi
+}
 
 tempdir_init() {
   if [[ ! -d "${TEMPDIR_ROOT}" ]]; then mkdir -p "${TEMPDIR_ROOT}"; fi
@@ -83,12 +104,10 @@ tempdir_reset() {
 }
 
 tempdir_sort_by_filename() {
-  # Sorts input lines (tempdirs) by their file name.
   awk -F/ '{print $NF, $0}' | sort | cut -d' ' -f2-
 }
 
 tempdir_sort_by_history() {
-  # Sorts input lines (tempdirs) by their history in TEMPDIR_LIST.
   awk -F/ '
     NR==FNR { o[$1]=++n; next }
     { key=$1; print (o[key] ? o[key] : 999999), $0 }
@@ -96,7 +115,6 @@ tempdir_sort_by_history() {
 }
 
 tempdir_sort_by_name() {
-  # Sorts input lines numerically by timestamp prefix (assumes it's at the start).
   sort "${1:-/dev/stdin}"
 }
 
@@ -110,7 +128,6 @@ tempdir_reverse_by_history() {
 }
 
 tempdir_reverse_by_name() {
-  # Sorts input lines numerically by timestamp prefix (assumes it's at the start).
   tac "${1:-/dev/stdin}"
 }
 
@@ -121,22 +138,22 @@ tempdir() {
     -p|--prune)  tempdir_prune; return $?;;
     -h|--help)   tempdir_usage; return 0;;
   esac
-  local ACTION="seek"     # either "seek" or "browse"
-  local RENDER="list"     # either "list" or "tree"
-  local GIVEN_ARGS=()     # because we consume them as we iterate
-  local TERM_SORT="-d"    # either -d, -f, or -n
-  local TERMS=()          # search terms
-  local RESULTS=""        # full search results
-  local MATCHES=""        # tempdirs that match the search
-  local COUNT=0           # number of matches
-  local SORTER=()         # sort command
-  local SELECT=""         # which tempdir to navigate to
-  local FIND_GLOBAL=()    # global find options
-  local FIND_EXPR=()      # find expression options
-  local GREP_PREFIX=(-iE) # grep options
-  local TREE_PREFIX=(-L3) # tree options
-  local HISTORY_MATCH=""  # single selection history line
-  local HISTORY_ALL=""    # all tempdir selection history
+  local ACTION="seek"
+  local RENDER="list"
+  local GIVEN_ARGS=()
+  local TERM_SORT="-d"
+  local TERMS=()
+  local RESULTS=""
+  local MATCHES=""
+  local COUNT=0
+  local SORTER=()
+  local SELECT=""
+  local FIND_GLOBAL=()
+  local FIND_EXPR=()
+  local GREP_PREFIX=(-iE)
+  local TREE_PREFIX=(-L3)
+  local HISTORY_MATCH=""
+  local HISTORY_ALL=""
   if [[ "$1" =~ ^-(d|f|n|D|F|N)$ ]]; then
     TERM_SORT="$1";
     shift;
@@ -156,21 +173,17 @@ tempdir() {
   fi
   GIVEN_ARGS=("$@")
   if [ -z "${GIVEN_ARGS[*]}" ]; then
-    # No args, so just sort tempdirs
     MATCHES="$(echo "${MATCHES}" | $SORTER)"
   elif [[ ! "$1" =~ ^-[^-] && ! "$1" == "!" ]]; then
-    # No find expression, so seed results for grep
     FIND_GLOBAL=(-mindepth 0 -maxdepth 2)
-    RESULTS="$(echo "${MATCHES}" | sed "s|^|${TEMPDIR_ROOT}/|" | xargs -d '\n' -I{} find {} "${FIND_GLOBAL[@]}" "${TEMPDIR_FIND_PREFIX[@]}" "${FIND_EXPR[@]}" "${TEMPDIR_FIND_SUFFIX[@]}" | sed "s|${TEMPDIR_ROOT}/||" | $SORTER )"
+    RESULTS="$(echo "${MATCHES}" | sed "s|^|${TEMPDIR_ROOT}/|" | xargs -d '\n' -I{} find {} "${FIND_GLOBAL[@]}" "${TEMPDIR_FIND_PREFIX[@]}" "${FIND_EXPR[@]}" "${TEMPDIR_FIND_SUFFIX[@]}" | sed "s|${TEMPDIR_ROOT}/||" | $SORTER)"
   fi
-  # Build & apply filters from command-line arguments
-  while [ -n "$1"  ]; do
+  while [ -n "$1" ]; do
     case "$1" in
       -b|--browse) ACTION="browse"; shift 1; continue;;
       -t|--tree)   RENDER="tree";   shift 1; continue;;
     esac
     if [[ "$1" =~ ^-[^-] || "$1" == "!" ]]; then
-      # consume find expression
       FIND_GLOBAL=()
       FIND_EXPR=()
       while [[ "$1" =~ ^-[^-] || "$1" == "!" ]]; do
@@ -188,17 +201,15 @@ tempdir() {
         esac
       done
       TERMS+=("/")
-      RESULTS="$(echo "${MATCHES}" | sed "s|^|${TEMPDIR_ROOT}/|" | xargs -d '\n' -I{} find {} "${FIND_GLOBAL[@]}" "${TEMPDIR_FIND_PREFIX[@]}" "${FIND_EXPR[@]}" "${TEMPDIR_FIND_SUFFIX[@]}" | sed "s|${TEMPDIR_ROOT}/||" | $SORTER )"
+      RESULTS="$(echo "${MATCHES}" | sed "s|^|${TEMPDIR_ROOT}/|" | xargs -d '\n' -I{} find {} "${FIND_GLOBAL[@]}" "${TEMPDIR_FIND_PREFIX[@]}" "${FIND_EXPR[@]}" "${TEMPDIR_FIND_SUFFIX[@]}" | sed "s|${TEMPDIR_ROOT}/||" | $SORTER)"
     else
-      # consume grep filter
       TERMS+=("$1")
-      RESULTS="$(echo "${RESULTS}" | grep ${GREP_PREFIX[@]} "$1" | $SORTER )"
+      RESULTS="$(echo "${RESULTS}" | grep "${GREP_PREFIX[@]}" "$1" | $SORTER)"
       shift 1
     fi
-    MATCHES="$(echo "${RESULTS}" | sed "s/\/.*//" | awk '!seen[$0]++' )"
+    MATCHES="$(echo "${RESULTS}" | sed "s/\/.*//" | awk '!seen[$0]++')"
   done
   if [ ${#GIVEN_ARGS[@]} -eq 0 ]; then
-    # No args, so user expects to changedir
     SELECT="$(echo "${MATCHES}" | head -n1 | xargs)"
     if [ -z "${SELECT}" ]; then
       >&2 echo "Unexpected: No tempdirs found?"
@@ -206,7 +217,6 @@ tempdir() {
       return 1
     fi
   else
-    # Args given, so maybe we must render results
     if [ -t 1 ]; then 
       GREP_PREFIX+=(--color=always)
     fi
@@ -214,22 +224,19 @@ tempdir() {
     if [ "$COUNT" -eq 1 ] && [ "$ACTION" != "browse" ]; then
       SELECT="$(echo "${MATCHES}" | head -n1 | xargs)"
     elif [ "${RENDER}" = "tree" ]; then
-      echo "${MATCHES}" | sed "s|^|${TEMPDIR_ROOT}/|" | xargs -d '\n' -- tree --noreport $TREE_PREFIX | grep ${GREP_PREFIX[@]} "^|$(IFS="|"; echo "${TERMS[*]}")" | less -RF
+      echo "${MATCHES}" | sed "s|^|${TEMPDIR_ROOT}/|" | xargs -d '\n' -- tree --noreport "${TREE_PREFIX[@]}" | grep "${GREP_PREFIX[@]}" "^|$(IFS="|"; echo "${TERMS[*]}")" | less -RF
     elif [ "${RENDER}" = "list" ]; then
       >&2 echo "Found ${COUNT} matching tempdirs."
-      echo "${RESULTS}" | sed "s|^${TEMPDIR_ROOT}/|  |" | grep ${GREP_PREFIX[@]} "^|$(IFS="|"; echo "${TERMS[*]}")" | less -RF
+      echo "${RESULTS}" | sed "s|^${TEMPDIR_ROOT}/|  |" | grep "${GREP_PREFIX[@]}" "^|$(IFS="|"; echo "${TERMS[*]}")" | less -RF
     fi
   fi
   if [ -n "${SELECT}" ] && [ "${ACTION}" = "seek" ]; then
-    # trim TEMPDIR_ROOT and trailing slash
     SELECT="$(echo "${SELECT}" | sed "s|^${TEMPDIR_ROOT}/||;s|/$||")"
     HISTORY_MATCH="$(grep -wm1 "${SELECT}" "${TEMPDIR_LIST}")"
     if [ -n "${HISTORY_MATCH}" ]; then
-      # If the tempdir is already in the history, remove it first
       HISTORY_ALL="$(grep -vw "${SELECT}" "${TEMPDIR_LIST}")"
-      {echo "${HISTORY_ALL}"; echo "${HISTORY_MATCH}"} > "${TEMPDIR_LIST}"
+      { echo "${HISTORY_ALL}"; echo "${HISTORY_MATCH}"; } > "${TEMPDIR_LIST}"
     else
-      # Otherwise, append it to the history
       echo "${SELECT}" >> "${TEMPDIR_LIST}"
     fi
     changedir "${TEMPDIR_ROOT}/${SELECT}"

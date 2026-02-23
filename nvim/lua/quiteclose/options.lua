@@ -11,7 +11,7 @@ vim.opt.wrap = false
 
 vim.opt.swapfile = false
 vim.opt.backup = false
-vim.opt.undodir = os.getenv('HOME') .. '/.nvimundo'
+vim.opt.undodir = vim.fn.stdpath('state') .. '/undo'
 vim.opt.undofile = true
 
 vim.opt.hlsearch = false

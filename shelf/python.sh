@@ -3,5 +3,4 @@
 # venv etc.
 ##############################################################
 
-activate='source ./venv/bin/activate'
-
+alias activate='source ./venv/bin/activate'

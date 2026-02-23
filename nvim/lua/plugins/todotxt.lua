@@ -10,21 +10,24 @@ return {
       },
     })
   end,
-  opts = {
-    todotxt = os.getenv("HOME") .. "/workspaces/daisy.000000/tasks/todo.txt",
-    donetxt = os.getenv("HOME") .. "/workspaces/daisy.000000/tasks/done.txt",
-    ghost_text = {
-      enable = true,
-      mappings = {
-        ["(A)"] = "Now",
-        ["(B)"] = "Next",
-        ["(C)"] = "Soon",
-        ["(D)"] = "Someday",
+  opts = function()
+    local daisy = os.getenv("DAISY_ROOT") or (os.getenv("HOME") .. "/.daisy")
+    return {
+      todotxt = daisy .. "/tasks/todo.txt",
+      donetxt = daisy .. "/tasks/done.txt",
+      ghost_text = {
+        enable = true,
+        mappings = {
+          ["(A)"] = "Now",
+          ["(B)"] = "Next",
+          ["(C)"] = "Soon",
+          ["(D)"] = "Someday",
+        },
+        prefix = "~",
+        highlight = "Comment",
       },
-      prefix = "~",
-      highlight = "Comment",
-    },
-  },
+    }
+  end,
   config = function(_, opts)
     require("todotxt").setup(opts)
     require('quiteclose/keymap').after_plugin_todotxt()

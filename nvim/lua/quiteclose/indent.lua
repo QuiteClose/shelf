@@ -7,7 +7,7 @@ local CONFIG = {
   },
   filetype = {
     {2, Spaces, 'cmake,css,fish,handlebars,html,javascript,javascriptreact,' ..
-                'json,less,lua,proto,scheme,scss,sh,sql,svelte,terraform' ..
+                'json,less,lua,proto,scheme,scss,sh,sql,svelte,terraform,' ..
                 'toml,typescript,typescriptreact,vue,xml,yaml,zsh'},
     {4, Spaces, 'ada,ansible,clojure,cs,csharp,elixir,erlang,fortran,' ..
                 'groovy,haskell,java,kotlin,latex,markdown,ocaml,perl,php,' ..

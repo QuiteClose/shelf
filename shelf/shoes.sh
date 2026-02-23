@@ -10,11 +10,11 @@
 ##############################################################
 
 function shoes() {
-	local SHOES_PATH="$HOME/.local/share/shoes"
+	local SHOES_PATH="${SHELF_SHOES:-$HOME/.local/share/shoes}"
 	local ACTION=""
 	local CLUSTER=""
-	mkdir -p $SHOES_PATH{,/cluster}
-	case $1 in
+	mkdir -p "${SHOES_PATH}"{,/cluster}
+	case "$1" in
 	-c|--create)
 		ACTION="create"
 		CLUSTER="$2"
@@ -39,17 +39,16 @@ function shoes() {
 		CLUSTER="$1"
 		;;
 	esac
-	case $ACTION in
+	case "$ACTION" in
 	help)
 		echo "Usage: shoes [OPTIONS] <CLUSTER>"
 		echo "  Login to a cluster with a saved token. If no single cluster-file"
-		echo "  matches the given name, list all matches. Non-login action are"
+		echo "  matches the given name, list all matches. Non-login actions are"
 		echo "  triggered via options:"
 		echo 
 		echo "  -c, --create     Create a cluster-file with the given name."
 		echo "  -e, --edit       Edit the token (or cluster-file if given.)"
 		echo "  -h, --help       Display this help message."
-		echo "  -r, --rename     Rename a cluster file."
 		echo "  -s, --search     List matching cluster files."
 		echo "  -t, --token      Source the token."
 		return 0
@@ -64,14 +63,14 @@ function shoes() {
 			return 1
 		fi
 		>&2 echo "Editing cluster file at $SHOES_PATH/cluster/$CLUSTER.sh"
-		vi "$SHOES_PATH/cluster/$CLUSTER.sh"
+		"${EDITOR:-vi}" "$SHOES_PATH/cluster/$CLUSTER.sh"
 		return $?
 		;;
 	edit)
 		if [ -n "$CLUSTER" ]; then
 			if [ -e "$SHOES_PATH/cluster/$CLUSTER.sh" ]; then
 				>&2 echo "Editing cluster file at $SHOES_PATH/cluster/$CLUSTER.sh"
-				vi "$SHOES_PATH/cluster/$CLUSTER.sh"
+				"${EDITOR:-vi}" "$SHOES_PATH/cluster/$CLUSTER.sh"
 				return $?
 			fi
 			>&2 echo "Cluster file does not exist at $SHOES_PATH/cluster/$CLUSTER.sh"
@@ -82,7 +81,7 @@ function shoes() {
 		>&2 echo "Editing token at $SHOES_PATH/_token.txt"
 		>&2 echo "If you want to source the token, run:"
 		>&2 echo "  shoes -t"
-		vi "$SHOES_PATH/_token.txt"
+		"${EDITOR:-vi}" "$SHOES_PATH/_token.txt"
 		return $?
 		;;
 	token)
@@ -91,7 +90,7 @@ function shoes() {
 			return 1
 		fi
 		>&2 echo "Sourcing token from $SHOES_PATH/_token.txt"
-		export VAULT_TOKEN=$(cat "$SHOES_PATH/_token.txt")
+		export VAULT_TOKEN="$(cat "$SHOES_PATH/_token.txt")"
 		return 0
 		;;
 	login)
@@ -109,9 +108,9 @@ function shoes() {
 		if [ -z "$CLUSTER" ]; then
 			CLUSTER=".*"
 		fi
-		local CLUSTER_LIST="$(ls $SHOES_PATH/cluster|grep -v ^_|awk -F. '{print $1}'|sort)"
-		local MATCHES=$(grep $CLUSTER <<< $CLUSTER_LIST)
-		local LENGTH=$(wc -l <<< $MATCHES|xargs)
+		local CLUSTER_LIST="$(ls "$SHOES_PATH/cluster" | grep -v '^_' | awk -F. '{print $1}' | sort)"
+		local MATCHES="$(grep "$CLUSTER" <<< "$CLUSTER_LIST")"
+		local LENGTH="$(wc -l <<< "$MATCHES" | xargs)"
 		if [ "$MATCHES" = "" ]; then
 			>&2 echo "Found 0 clusters matching \"$CLUSTER\""
 			return 1
@@ -120,7 +119,7 @@ function shoes() {
 		fi
 		if [ "$ACTION" = "search" ]; then
 			>&2 echo "Found $LENGTH matching clusters:"
-			sed 's/^/  /' <<< $MATCHES|grep --color $CLUSTER
+			sed 's/^/  /' <<< "$MATCHES" | grep --color "$CLUSTER"
 			return 0
 		else
 			>&2 echo "Sourcing cluster file at $SHOES_PATH/cluster/$MATCHES.sh"

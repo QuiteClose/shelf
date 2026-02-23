@@ -7,11 +7,11 @@
 ##############################################################
 
 function workspace() {
-    local WORKSPACE_ROOT=~/workspaces
+    local WORKSPACE_ROOT="${SHELF_WORKSPACES:-$HOME/workspaces}"
     local ACTION=""
     local ORDER="name"
     local LABEL=""
-    case $1 in
+    case "$1" in
         -c|--create)
             ACTION="create"
             LABEL="$2"
@@ -29,15 +29,15 @@ function workspace() {
             LABEL="$1"
             ;;
     esac
-    case $ACTION in
+    case "$ACTION" in
         help)
             echo "Usage: workspace [OPTIONS] <LABEL>"
             echo "Switch to a workspace with the given label. Or, if an option is given:"
             echo
             echo "  -c, --create     Create a workspace with the given label."
             echo "  -h, --help       Display this help message."
-			echo
-			echo "If no argument is given, switch to the latest workspace."
+            echo
+            echo "If no argument is given, switch to the latest workspace."
             return 0
         ;;
         create)
@@ -59,26 +59,26 @@ function workspace() {
         *)
             if [ -z "$LABEL" ]; then
                 >&2 echo "Leaving $PWD"
-                cd $(ls -td ~/workspaces/*|head -n1)
+                cd "$(ls -td "$WORKSPACE_ROOT"/* | head -n1)"
                 return 0
             fi
-            local WORKSPACES=$(ls -td $WORKSPACE_ROOT/*|awk -F/ '{print $NF}')
+            local WORKSPACES="$(ls -td "$WORKSPACE_ROOT"/* | awk -F/ '{print $NF}')"
             if [ "$ORDER" = "date" ]; then
-                local WORKSPACE_LIST=$(awk -F. '{print $2,$0}'<<<$WORKSPACES|sort -n|awk '{print $2}')
+                local WORKSPACE_LIST="$(awk -F. '{print $2,$0}' <<< "$WORKSPACES" | sort -n | awk '{print $2}')"
             else
-                local WORKSPACE_LIST=$(sort<<<$WORKSPACES)
+                local WORKSPACE_LIST="$(sort <<< "$WORKSPACES")"
             fi
-            if ! grep -q $LABEL <<< $WORKSPACE_LIST; then
+            if ! grep -q "$LABEL" <<< "$WORKSPACE_LIST"; then
                 >&2 echo "Found 0 workspaces matching \"$LABEL\""
                 return 1
             else
-                local MATCHES=$(grep --color $LABEL <<< $WORKSPACE_LIST)
-                if [ $(wc -l <<< $MATCHES|xargs) -eq 1 ]; then
+                local MATCHES="$(grep --color "$LABEL" <<< "$WORKSPACE_LIST")"
+                if [ "$(wc -l <<< "$MATCHES" | xargs)" -eq 1 ]; then
                     >&2 echo "Leaving $PWD"
                     cd "$WORKSPACE_ROOT/$MATCHES"
                 else
-                    >&2 echo "Found $(wc -l <<< $MATCHES|xargs) matching workspaces:"
-                    sed 's/^/  /' <<< $MATCHES|grep --color $LABEL
+                    >&2 echo "Found $(wc -l <<< "$MATCHES" | xargs) matching workspaces:"
+                    sed 's/^/  /' <<< "$MATCHES" | grep --color "$LABEL"
                     return 1
                 fi
             fi

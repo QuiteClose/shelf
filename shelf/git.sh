@@ -4,7 +4,6 @@
 ##############################################################
 
 function git-go() {
-  # goto root directory of the .git project
   if [ -d ".git" ]; then
     echo ".git already exists in the current working-directory."
     return 1
@@ -14,9 +13,9 @@ function git-go() {
   while true; do
     if [ -d "$SEARCH/.git" ]; then
       echo "$PWD"
-      cd $SEARCH
+      cd "$SEARCH"
       return 0
-    elif [ "$(realpath $SEARCH)" = "/" ]; then
+    elif [ "$(realpath "$SEARCH")" = "/" ]; then
       echo "No parent .git project."
       return 1
     else
@@ -26,22 +25,19 @@ function git-go() {
 }
 
 function git-scrub() {
-  # scrub (delete) merged branches
-  local CURRENT_BRANCH=$(git branch --show-current)
-  if [ $CURRENT_BRANCH != "main" && $CURRENT_BRANCH != "master" ]; then
+  local CURRENT_BRANCH="$(git branch --show-current)"
+  if [[ "$CURRENT_BRANCH" != "main" && "$CURRENT_BRANCH" != "master" ]]; then
     echo "Must be on main or master branch to git-scrub!"
     return 1
   fi
-  for branch in $(git branch --merged HEAD|grep -vw $CURRENT_BRANCH); do
-    git branch -d $branch
+  for branch in $(git branch --merged HEAD | grep -vw "$CURRENT_BRANCH"); do
+    git branch -d "$branch"
   done
 }
 
 git-strip() {
-  # Strip trailing whitespace from files.
   local files=()
   local since_ref=""
-  # Parse arguments
   while [[ $# -gt 0 ]]; do
     case $1 in
       --since)
@@ -55,7 +51,6 @@ git-strip() {
     esac
   done
 
-  # If --since provided, get changed files from git
   if [[ -n "$since_ref" ]]; then
     echo "Finding files changed since $since_ref..."
     local git_files=()
@@ -65,7 +60,6 @@ git-strip() {
     files+=("${git_files[@]}")
   fi
 
-  # Check if we have files to process
   if [[ ${#files[@]} -eq 0 ]]; then
     echo "Usage: git-strip [--since <ref>] [files...]"
     echo "  --since <ref>  Process files changed since git ref"
@@ -73,7 +67,6 @@ git-strip() {
     return 1
   fi
 
-  # Process each file
   local processed=0
   for file in "${files[@]}"; do
     if [[ ! -f "$file" ]]; then
@@ -81,12 +74,9 @@ git-strip() {
       continue
     fi
 
-    # Strip trailing whitespace using sed
     if sed --version &>/dev/null 2>&1; then
-      # GNU sed (Linux)
       sed -i 's/[[:space:]]*$//' "$file"
     else
-      # BSD sed (macOS)
       sed -i '' 's/[[:space:]]*$//' "$file"
     fi
 

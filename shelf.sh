@@ -12,7 +12,7 @@
 
 changedir() {
   # Change the current working-directory to the given path
-  # posts a message to stderr about the change.
+  # and print the transition to stdout.
   local TARGET="$1"
   if [[ -z "${TARGET}" ]]; then
     TARGET="${HOME}"
@@ -27,7 +27,6 @@ changedir() {
 ##############################################################
 
 function git-go() {
-  # goto root directory of the .git project
   if [ -d ".git" ]; then
     echo ".git already exists in the current working-directory."
     return 1
@@ -37,9 +36,9 @@ function git-go() {
   while true; do
     if [ -d "$SEARCH/.git" ]; then
       echo "$PWD"
-      cd $SEARCH
+      cd "$SEARCH"
       return 0
-    elif [ "$(realpath $SEARCH)" = "/" ]; then
+    elif [ "$(realpath "$SEARCH")" = "/" ]; then
       echo "No parent .git project."
       return 1
     else
@@ -49,22 +48,19 @@ function git-go() {
 }
 
 function git-scrub() {
-  # scrub (delete) merged branches
-  local CURRENT_BRANCH=$(git branch --show-current)
-  if [ $CURRENT_BRANCH != "main" && $CURRENT_BRANCH != "master" ]; then
+  local CURRENT_BRANCH="$(git branch --show-current)"
+  if [[ "$CURRENT_BRANCH" != "main" && "$CURRENT_BRANCH" != "master" ]]; then
     echo "Must be on main or master branch to git-scrub!"
     return 1
   fi
-  for branch in $(git branch --merged HEAD|grep -vw $CURRENT_BRANCH); do
-    git branch -d $branch
+  for branch in $(git branch --merged HEAD | grep -vw "$CURRENT_BRANCH"); do
+    git branch -d "$branch"
   done
 }
 
 git-strip() {
-  # Strip trailing whitespace from files.
   local files=()
   local since_ref=""
-  # Parse arguments
   while [[ $# -gt 0 ]]; do
     case $1 in
       --since)
@@ -78,7 +74,6 @@ git-strip() {
     esac
   done
 
-  # If --since provided, get changed files from git
   if [[ -n "$since_ref" ]]; then
     echo "Finding files changed since $since_ref..."
     local git_files=()
@@ -88,7 +83,6 @@ git-strip() {
     files+=("${git_files[@]}")
   fi
 
-  # Check if we have files to process
   if [[ ${#files[@]} -eq 0 ]]; then
     echo "Usage: git-strip [--since <ref>] [files...]"
     echo "  --since <ref>  Process files changed since git ref"
@@ -96,7 +90,6 @@ git-strip() {
     return 1
   fi
 
-  # Process each file
   local processed=0
   for file in "${files[@]}"; do
     if [[ ! -f "$file" ]]; then
@@ -104,12 +97,9 @@ git-strip() {
       continue
     fi
 
-    # Strip trailing whitespace using sed
     if sed --version &>/dev/null 2>&1; then
-      # GNU sed (Linux)
       sed -i 's/[[:space:]]*$//' "$file"
     else
-      # BSD sed (macOS)
       sed -i '' 's/[[:space:]]*$//' "$file"
     fi
 
@@ -132,14 +122,13 @@ alias k='kubectl'
 # venv etc.
 ##############################################################
 
-activate='source ./venv/bin/activate'
-
+alias activate='source ./venv/bin/activate'
 ##############################################################
 # repo.sh
 # Quickly clone/search/switch-to repo directories.
 ##############################################################
 
-REPO_ROOT="$(realpath ~/repos)"
+REPO_ROOT="${SHELF_REPOS:-$(realpath ~/repos)}"
 REPO_STAT="%Y %W %n"
 REPO_LIST="$REPO_ROOT/_manifest.txt"
 REPO_HOST="_server.txt"
@@ -163,14 +152,14 @@ repo_reset() {
 
 repo_stat() {
   local SELECT="$1"
-  stat -c "${REPO_STAT}" "${REPO_ROOT}/${SELECT}/.git"| sed "s|${REPO_ROOT}/||;s|/\.git\$||"
+  stat -c "${REPO_STAT}" "${REPO_ROOT}/${SELECT}/.git" | sed "s|${REPO_ROOT}/||;s|/\.git\$||"
 }
 
 repo_usage() {
-  >&2 echo "Usage: repo [-c <URL> | -s | [-d|-r] <TERMS...>]
+  >&2 echo "Usage: repo [-c <URL> | -s | [-d] <TERMS...>]
   Searches cloned repositories for given TERMS and changes-dir to the match.
-  repositories. More terms can be added to narrow down the search. Changes
-  directory to the matching repository if only one match is found.
+  More terms can be added to narrow down the search. Changes directory to the
+  matching repository if only one match is found.
 
   -b, --browse Scroll through all cloned repositories (or a specific remote).
   --clone      Clone a repository with the given terms.
@@ -185,18 +174,18 @@ repo() {
   repo_init
   local GIT_URI_REGEX='^git@[A-Za-z0-9_.-]+(:[0-9]+)?:[A-Za-z0-9_.\/-]+\.git$'
   local GIT_HTTP_REGEX='^https?://[A-Za-z0-9_.-]+(/[A-Za-z0-9_.\/-]+)?\.git$'
-  local ACTION="search" # What to do
-  local ORDER="name"    # Sort order
-  local REMOTE=""       # Name of server, e.g. github for github.com
-  local SEARCH=""       # Search terms to select repos. 
-  local FILTER=""       # Filter used by grep (built from SEARCH)
-  local MATCHES=""      # Repos that matches the filter
-  local COUNT=""        # Number of matches
-  local SORTER="sort"   # sort command
-  local FIELDS="-nk3,3" # sort command flags
-  local GITURI=""       # Git URI, e.g. git@github.com:quiteclose/shelf.git
-  local SERVER=""       # First part of URI, e.g. git@github.com
-  local SELECT=""       # Selects repos on the server, e.g. quiteclose/shelf
+  local ACTION="search"
+  local ORDER="name"
+  local REMOTE=""
+  local SEARCH=""
+  local FILTER=""
+  local MATCHES=""
+  local COUNT=""
+  local SORTER="sort"
+  local FIELDS="-nk3,3"
+  local GITURI=""
+  local SERVER=""
+  local SELECT=""
   case "$1" in
     -h|--help)   repo_usage; return 0 ;;
     -b|--browse) ACTION="browse"; REMOTE="$2"; ;;
@@ -223,26 +212,22 @@ repo() {
       ;;
     clone)
       if [[ -z "${SEARCH}" ]]; then
-        # Only REMOTE given, so expect that to be a git@ URI
         GITURI="${REMOTE}"
         if [[ "${GITURI}" =~ $GIT_URI_REGEX ]]; then
-          # Get URI fields, e.g.  # git@github.com:quiteclose/shelf.git
-          SEARCH="${GITURI##*:}"  #                quiteclose/shelf.git
-          SEARCH="${SEARCH%.git}" #                quiteclose/shelf
-          SERVER="${GITURI%:*}"   # git@github.com
-          SERVER="${SERVER#git@}" #     github.com
+          SEARCH="${GITURI##*:}"
+          SEARCH="${SEARCH%.git}"
+          SERVER="${GITURI%:*}"
+          SERVER="${SERVER#git@}"
         elif [[ "${GITURI}" =~ $GIT_HTTP_REGEX ]]; then
-          # Get URI fields, e.g.  # https://github.com/quiteclose/shelf.git
-          SERVER="${GITURI#*://}" #         github.com/quiteclose/shelf.git
-          SERVER="${SERVER%%/*}"  #         github.com
-          SEARCH="${GITURI#*://}" #         github.com/quiteclose/shelf.git
-          SEARCH="${SEARCH#*/}"   #                    quiteclose/shelf.git
-          SEARCH="${SEARCH%.git}" #                    quiteclose/shelf
+          SERVER="${GITURI#*://}"
+          SERVER="${SERVER%%/*}"
+          SEARCH="${GITURI#*://}"
+          SEARCH="${SEARCH#*/}"
+          SEARCH="${SEARCH%.git}"
         else
           >&2 echo "Either provide a git@ URI, an HTTPS URL or <remote> <name>/<repo>"
           return 1
         fi
-        # Find the remote that matches the server
         REMOTE=""
         for name in "${REPO_ROOT}"/*; do
           if [[ ! -d "${name}" || ! -f "${name}/${REPO_HOST}" ]]; then continue; fi
@@ -252,10 +237,9 @@ repo() {
             break
           fi
         done
-        # Create the remote if it does not exist
         if [[ -z "${REMOTE}" ]]; then
           >&2 echo "Remote not found for ${SERVER}"
-          REMOTE="${REMOTE%%[^a-zA-Z0-9:]*}" # Isolate leading alnum
+          REMOTE="${SERVER%%[^a-zA-Z0-9]*}"
           if [[ -z "${REMOTE}" ]]; then
             >&2 echo "Remote name is empty. Cannot create remote."
             return 1
@@ -267,8 +251,15 @@ repo() {
           mkdir -p "${REPO_ROOT}/${REMOTE}"
           echo "${SERVER}" > "${REPO_ROOT}/${REMOTE}/${REPO_HOST}"
         fi
+      else
+        # REMOTE and SEARCH given separately (e.g. repo --clone github quiteclose/shelf)
+        if [[ ! -f "${REPO_ROOT}/${REMOTE}/${REPO_HOST}" ]]; then
+          >&2 echo "Remote ${REMOTE} does not have a ${REPO_HOST} file."
+          return 1
+        fi
+        SERVER="$(cat "${REPO_ROOT}/${REMOTE}/${REPO_HOST}")"
+        GITURI="git@${SERVER}:${SEARCH}.git"
       fi
-      # REMOTE and SEARCH are now set (and the remote should exist)
       if [[ ! -d "${REPO_ROOT}/${REMOTE}" ]]; then
         >&2 echo "Remote ${REMOTE} does not exist. Try cloning a full git@ URI."
         return 1
@@ -281,15 +272,16 @@ repo() {
         >&2 echo "${SEARCH} already exists at ${REPO_ROOT}/${REMOTE}/${SEARCH}"
         return 1
       fi
-      # Clone the repository
       SERVER="$(cat "${REPO_ROOT}/${REMOTE}/${REPO_HOST}")"
       SELECT="${REMOTE}/${SEARCH}"
       mkdir -p "$(dirname "${REPO_ROOT}/${SELECT}")"
+      if [[ -z "${GITURI}" ]]; then
+        GITURI="git@${SERVER}:${SEARCH}.git"
+      fi
       git clone "${GITURI}" "${REPO_ROOT}/${SELECT}"
       ;;
     search)
-      # search for matching repo
-      FILTER="$(echo "${SEARCH}"|sed 's/ /\\\|/g')"
+      FILTER="$(echo "${SEARCH}" | sed 's/ /\\\|/g')"
       if [[ "${ORDER}" = "activity" ]]; then FIELDS="-nk1,3"; fi
       if [[ "${ORDER}" = "clone" ]];    then FIELDS="-nk2,3"; fi
       if [[ "${ORDER}" = "history" ]];  then FIELDS=""; SORTER="cat"; fi
@@ -321,7 +313,7 @@ repo() {
     local MATCH="$(grep -m1 -w "${SELECT}" "${REPO_LIST}")"
     if [[ -n "${MATCH}" ]]; then
       local OTHERS="$(grep -vw "${SELECT}" "${REPO_LIST}")"
-      {echo "${OTHERS}"; echo "${MATCH}"} > "${REPO_LIST}"
+      { echo "${OTHERS}"; echo "${MATCH}"; } > "${REPO_LIST}"
     else
       repo_stat "${SELECT}" >> "${REPO_LIST}"
     fi
@@ -341,11 +333,11 @@ repo() {
 ##############################################################
 
 function shoes() {
-	local SHOES_PATH="$HOME/.local/share/shoes"
+	local SHOES_PATH="${SHELF_SHOES:-$HOME/.local/share/shoes}"
 	local ACTION=""
 	local CLUSTER=""
-	mkdir -p $SHOES_PATH{,/cluster}
-	case $1 in
+	mkdir -p "${SHOES_PATH}"{,/cluster}
+	case "$1" in
 	-c|--create)
 		ACTION="create"
 		CLUSTER="$2"
@@ -370,17 +362,16 @@ function shoes() {
 		CLUSTER="$1"
 		;;
 	esac
-	case $ACTION in
+	case "$ACTION" in
 	help)
 		echo "Usage: shoes [OPTIONS] <CLUSTER>"
 		echo "  Login to a cluster with a saved token. If no single cluster-file"
-		echo "  matches the given name, list all matches. Non-login action are"
+		echo "  matches the given name, list all matches. Non-login actions are"
 		echo "  triggered via options:"
 		echo 
 		echo "  -c, --create     Create a cluster-file with the given name."
 		echo "  -e, --edit       Edit the token (or cluster-file if given.)"
 		echo "  -h, --help       Display this help message."
-		echo "  -r, --rename     Rename a cluster file."
 		echo "  -s, --search     List matching cluster files."
 		echo "  -t, --token      Source the token."
 		return 0
@@ -395,14 +386,14 @@ function shoes() {
 			return 1
 		fi
 		>&2 echo "Editing cluster file at $SHOES_PATH/cluster/$CLUSTER.sh"
-		vi "$SHOES_PATH/cluster/$CLUSTER.sh"
+		"${EDITOR:-vi}" "$SHOES_PATH/cluster/$CLUSTER.sh"
 		return $?
 		;;
 	edit)
 		if [ -n "$CLUSTER" ]; then
 			if [ -e "$SHOES_PATH/cluster/$CLUSTER.sh" ]; then
 				>&2 echo "Editing cluster file at $SHOES_PATH/cluster/$CLUSTER.sh"
-				vi "$SHOES_PATH/cluster/$CLUSTER.sh"
+				"${EDITOR:-vi}" "$SHOES_PATH/cluster/$CLUSTER.sh"
 				return $?
 			fi
 			>&2 echo "Cluster file does not exist at $SHOES_PATH/cluster/$CLUSTER.sh"
@@ -413,7 +404,7 @@ function shoes() {
 		>&2 echo "Editing token at $SHOES_PATH/_token.txt"
 		>&2 echo "If you want to source the token, run:"
 		>&2 echo "  shoes -t"
-		vi "$SHOES_PATH/_token.txt"
+		"${EDITOR:-vi}" "$SHOES_PATH/_token.txt"
 		return $?
 		;;
 	token)
@@ -422,7 +413,7 @@ function shoes() {
 			return 1
 		fi
 		>&2 echo "Sourcing token from $SHOES_PATH/_token.txt"
-		export VAULT_TOKEN=$(cat "$SHOES_PATH/_token.txt")
+		export VAULT_TOKEN="$(cat "$SHOES_PATH/_token.txt")"
 		return 0
 		;;
 	login)
@@ -440,9 +431,9 @@ function shoes() {
 		if [ -z "$CLUSTER" ]; then
 			CLUSTER=".*"
 		fi
-		local CLUSTER_LIST="$(ls $SHOES_PATH/cluster|grep -v ^_|awk -F. '{print $1}'|sort)"
-		local MATCHES=$(grep $CLUSTER <<< $CLUSTER_LIST)
-		local LENGTH=$(wc -l <<< $MATCHES|xargs)
+		local CLUSTER_LIST="$(ls "$SHOES_PATH/cluster" | grep -v '^_' | awk -F. '{print $1}' | sort)"
+		local MATCHES="$(grep "$CLUSTER" <<< "$CLUSTER_LIST")"
+		local LENGTH="$(wc -l <<< "$MATCHES" | xargs)"
 		if [ "$MATCHES" = "" ]; then
 			>&2 echo "Found 0 clusters matching \"$CLUSTER\""
 			return 1
@@ -451,7 +442,7 @@ function shoes() {
 		fi
 		if [ "$ACTION" = "search" ]; then
 			>&2 echo "Found $LENGTH matching clusters:"
-			sed 's/^/  /' <<< $MATCHES|grep --color $CLUSTER
+			sed 's/^/  /' <<< "$MATCHES" | grep --color "$CLUSTER"
 			return 0
 		else
 			>&2 echo "Sourcing cluster file at $SHOES_PATH/cluster/$MATCHES.sh"
@@ -470,7 +461,7 @@ tempdir_usage() {
   Creates & searches tempdirs. Changes to that directory when only one matches.
 
   -c           Create a tempdir (optionally with a <LABEL>)
-  -p, --prune  Delete unused tempdirs.
+  -p, --prune  Delete empty tempdirs older than 7 days.
   -b, --browse Do not changedir.
   -t, --tree   View the tempdirs as a tree.
 
@@ -503,7 +494,7 @@ tempdir_usage() {
 "
 }
 
-TEMPDIR_ROOT="$(realpath -m ~/tempdirs)"
+TEMPDIR_ROOT="${SHELF_TEMPDIRS:-$(realpath -m ~/tempdirs)}"
 TEMPDIR_LIST="${TEMPDIR_ROOT}/_manifest.txt"
 TEMPDIR_FIND_PREFIX=( \
   \( \
@@ -530,6 +521,27 @@ tempdir_create() {
   mktemp -d -p "${TEMPDIR_ROOT}" "${STAMP}.XXXXXX" | sed "s|^${TEMPDIR_ROOT}/||" | tee -a "${TEMPDIR_LIST}"
 }
 
+tempdir_prune() {
+  tempdir_init
+  local PRUNED=0
+  while IFS= read -r dir; do
+    local FULL="${TEMPDIR_ROOT}/${dir}"
+    if [[ ! -d "${FULL}" ]]; then continue; fi
+    local CONTENTS
+    CONTENTS="$(find "${FULL}" -mindepth 1 -maxdepth 1 2>/dev/null)"
+    if [[ -z "${CONTENTS}" ]]; then
+      >&2 echo "Pruning empty tempdir: ${dir}"
+      rm -rf "${FULL}"
+      ((PRUNED++))
+    fi
+  done < <(find "${TEMPDIR_ROOT}" -mindepth 1 -maxdepth 1 -type d -mtime +7 -printf "%f\n")
+  if [[ "${PRUNED}" -gt 0 ]]; then
+    >&2 echo "Pruned ${PRUNED} empty tempdir(s). Resetting manifest."
+    tempdir_reset
+  else
+    >&2 echo "Nothing to prune."
+  fi
+}
 
 tempdir_init() {
   if [[ ! -d "${TEMPDIR_ROOT}" ]]; then mkdir -p "${TEMPDIR_ROOT}"; fi
@@ -545,12 +557,10 @@ tempdir_reset() {
 }
 
 tempdir_sort_by_filename() {
-  # Sorts input lines (tempdirs) by their file name.
   awk -F/ '{print $NF, $0}' | sort | cut -d' ' -f2-
 }
 
 tempdir_sort_by_history() {
-  # Sorts input lines (tempdirs) by their history in TEMPDIR_LIST.
   awk -F/ '
     NR==FNR { o[$1]=++n; next }
     { key=$1; print (o[key] ? o[key] : 999999), $0 }
@@ -558,7 +568,6 @@ tempdir_sort_by_history() {
 }
 
 tempdir_sort_by_name() {
-  # Sorts input lines numerically by timestamp prefix (assumes it's at the start).
   sort "${1:-/dev/stdin}"
 }
 
@@ -572,7 +581,6 @@ tempdir_reverse_by_history() {
 }
 
 tempdir_reverse_by_name() {
-  # Sorts input lines numerically by timestamp prefix (assumes it's at the start).
   tac "${1:-/dev/stdin}"
 }
 
@@ -583,22 +591,22 @@ tempdir() {
     -p|--prune)  tempdir_prune; return $?;;
     -h|--help)   tempdir_usage; return 0;;
   esac
-  local ACTION="seek"     # either "seek" or "browse"
-  local RENDER="list"     # either "list" or "tree"
-  local GIVEN_ARGS=()     # because we consume them as we iterate
-  local TERM_SORT="-d"    # either -d, -f, or -n
-  local TERMS=()          # search terms
-  local RESULTS=""        # full search results
-  local MATCHES=""        # tempdirs that match the search
-  local COUNT=0           # number of matches
-  local SORTER=()         # sort command
-  local SELECT=""         # which tempdir to navigate to
-  local FIND_GLOBAL=()    # global find options
-  local FIND_EXPR=()      # find expression options
-  local GREP_PREFIX=(-iE) # grep options
-  local TREE_PREFIX=(-L3) # tree options
-  local HISTORY_MATCH=""  # single selection history line
-  local HISTORY_ALL=""    # all tempdir selection history
+  local ACTION="seek"
+  local RENDER="list"
+  local GIVEN_ARGS=()
+  local TERM_SORT="-d"
+  local TERMS=()
+  local RESULTS=""
+  local MATCHES=""
+  local COUNT=0
+  local SORTER=()
+  local SELECT=""
+  local FIND_GLOBAL=()
+  local FIND_EXPR=()
+  local GREP_PREFIX=(-iE)
+  local TREE_PREFIX=(-L3)
+  local HISTORY_MATCH=""
+  local HISTORY_ALL=""
   if [[ "$1" =~ ^-(d|f|n|D|F|N)$ ]]; then
     TERM_SORT="$1";
     shift;
@@ -618,21 +626,17 @@ tempdir() {
   fi
   GIVEN_ARGS=("$@")
   if [ -z "${GIVEN_ARGS[*]}" ]; then
-    # No args, so just sort tempdirs
     MATCHES="$(echo "${MATCHES}" | $SORTER)"
   elif [[ ! "$1" =~ ^-[^-] && ! "$1" == "!" ]]; then
-    # No find expression, so seed results for grep
     FIND_GLOBAL=(-mindepth 0 -maxdepth 2)
-    RESULTS="$(echo "${MATCHES}" | sed "s|^|${TEMPDIR_ROOT}/|" | xargs -d '\n' -I{} find {} "${FIND_GLOBAL[@]}" "${TEMPDIR_FIND_PREFIX[@]}" "${FIND_EXPR[@]}" "${TEMPDIR_FIND_SUFFIX[@]}" | sed "s|${TEMPDIR_ROOT}/||" | $SORTER )"
+    RESULTS="$(echo "${MATCHES}" | sed "s|^|${TEMPDIR_ROOT}/|" | xargs -d '\n' -I{} find {} "${FIND_GLOBAL[@]}" "${TEMPDIR_FIND_PREFIX[@]}" "${FIND_EXPR[@]}" "${TEMPDIR_FIND_SUFFIX[@]}" | sed "s|${TEMPDIR_ROOT}/||" | $SORTER)"
   fi
-  # Build & apply filters from command-line arguments
-  while [ -n "$1"  ]; do
+  while [ -n "$1" ]; do
     case "$1" in
       -b|--browse) ACTION="browse"; shift 1; continue;;
       -t|--tree)   RENDER="tree";   shift 1; continue;;
     esac
     if [[ "$1" =~ ^-[^-] || "$1" == "!" ]]; then
-      # consume find expression
       FIND_GLOBAL=()
       FIND_EXPR=()
       while [[ "$1" =~ ^-[^-] || "$1" == "!" ]]; do
@@ -650,17 +654,15 @@ tempdir() {
         esac
       done
       TERMS+=("/")
-      RESULTS="$(echo "${MATCHES}" | sed "s|^|${TEMPDIR_ROOT}/|" | xargs -d '\n' -I{} find {} "${FIND_GLOBAL[@]}" "${TEMPDIR_FIND_PREFIX[@]}" "${FIND_EXPR[@]}" "${TEMPDIR_FIND_SUFFIX[@]}" | sed "s|${TEMPDIR_ROOT}/||" | $SORTER )"
+      RESULTS="$(echo "${MATCHES}" | sed "s|^|${TEMPDIR_ROOT}/|" | xargs -d '\n' -I{} find {} "${FIND_GLOBAL[@]}" "${TEMPDIR_FIND_PREFIX[@]}" "${FIND_EXPR[@]}" "${TEMPDIR_FIND_SUFFIX[@]}" | sed "s|${TEMPDIR_ROOT}/||" | $SORTER)"
     else
-      # consume grep filter
       TERMS+=("$1")
-      RESULTS="$(echo "${RESULTS}" | grep ${GREP_PREFIX[@]} "$1" | $SORTER )"
+      RESULTS="$(echo "${RESULTS}" | grep "${GREP_PREFIX[@]}" "$1" | $SORTER)"
       shift 1
     fi
-    MATCHES="$(echo "${RESULTS}" | sed "s/\/.*//" | awk '!seen[$0]++' )"
+    MATCHES="$(echo "${RESULTS}" | sed "s/\/.*//" | awk '!seen[$0]++')"
   done
   if [ ${#GIVEN_ARGS[@]} -eq 0 ]; then
-    # No args, so user expects to changedir
     SELECT="$(echo "${MATCHES}" | head -n1 | xargs)"
     if [ -z "${SELECT}" ]; then
       >&2 echo "Unexpected: No tempdirs found?"
@@ -668,7 +670,6 @@ tempdir() {
       return 1
     fi
   else
-    # Args given, so maybe we must render results
     if [ -t 1 ]; then 
       GREP_PREFIX+=(--color=always)
     fi
@@ -676,22 +677,19 @@ tempdir() {
     if [ "$COUNT" -eq 1 ] && [ "$ACTION" != "browse" ]; then
       SELECT="$(echo "${MATCHES}" | head -n1 | xargs)"
     elif [ "${RENDER}" = "tree" ]; then
-      echo "${MATCHES}" | sed "s|^|${TEMPDIR_ROOT}/|" | xargs -d '\n' -- tree --noreport $TREE_PREFIX | grep ${GREP_PREFIX[@]} "^|$(IFS="|"; echo "${TERMS[*]}")" | less -RF
+      echo "${MATCHES}" | sed "s|^|${TEMPDIR_ROOT}/|" | xargs -d '\n' -- tree --noreport "${TREE_PREFIX[@]}" | grep "${GREP_PREFIX[@]}" "^|$(IFS="|"; echo "${TERMS[*]}")" | less -RF
     elif [ "${RENDER}" = "list" ]; then
       >&2 echo "Found ${COUNT} matching tempdirs."
-      echo "${RESULTS}" | sed "s|^${TEMPDIR_ROOT}/|  |" | grep ${GREP_PREFIX[@]} "^|$(IFS="|"; echo "${TERMS[*]}")" | less -RF
+      echo "${RESULTS}" | sed "s|^${TEMPDIR_ROOT}/|  |" | grep "${GREP_PREFIX[@]}" "^|$(IFS="|"; echo "${TERMS[*]}")" | less -RF
     fi
   fi
   if [ -n "${SELECT}" ] && [ "${ACTION}" = "seek" ]; then
-    # trim TEMPDIR_ROOT and trailing slash
     SELECT="$(echo "${SELECT}" | sed "s|^${TEMPDIR_ROOT}/||;s|/$||")"
     HISTORY_MATCH="$(grep -wm1 "${SELECT}" "${TEMPDIR_LIST}")"
     if [ -n "${HISTORY_MATCH}" ]; then
-      # If the tempdir is already in the history, remove it first
       HISTORY_ALL="$(grep -vw "${SELECT}" "${TEMPDIR_LIST}")"
-      {echo "${HISTORY_ALL}"; echo "${HISTORY_MATCH}"} > "${TEMPDIR_LIST}"
+      { echo "${HISTORY_ALL}"; echo "${HISTORY_MATCH}"; } > "${TEMPDIR_LIST}"
     else
-      # Otherwise, append it to the history
       echo "${SELECT}" >> "${TEMPDIR_LIST}"
     fi
     changedir "${TEMPDIR_ROOT}/${SELECT}"
@@ -709,38 +707,37 @@ function ts() {
 	local STAMP="$(date -u '+%y%m%d.%H%MZ')"
 	local TXT="timestamps.txt"
 	if [ -z "$1" ]; then
-		if [ -e $TXT ]; then
-			grep --color '^\d\S*' <(cat $TXT; echo "$STAMP <<< Current time.")
+		if [ -e "$TXT" ]; then
+			grep --color '^[0-9]\S*' <(cat "$TXT"; echo "$STAMP <<< Current time.")
 		else
-			echo "$STAMP <<< Current time."|grep --color '^\S*' 
+			echo "$STAMP <<< Current time." | grep --color '^\S*' 
 		fi
-	elif [[ "$@" = "--help" ]]; then
+	elif [[ "$*" = "--help" ]]; then
 		echo "Usage: ts [OPTIONS] [MESSAGE]"
 		echo "Record a message to timestamps.txt along with a timestamp."
 		echo 
 		echo "  -                Add a note to the last timestamp."
 		echo "  --all            Show all timestamps with notes."
 		echo
-	elif [[ "$@" = "--all" ]]; then
-		grep --color '^\S*' <(cat $TXT; echo "$STAMP <<< Current time.")
-	elif [[ "$@" = "-" ]]; then
-		grep '^\d' $TXT|tail -n1|grep --color '^\S*'
-		echo "Enter notes:"|grep --color '.*'
-		sed 's/^/  /' >> $TXT
-		echo "Use \"ts --all\" to see notes."|grep --color '.*'
+	elif [[ "$*" = "--all" ]]; then
+		grep --color '^\S*' <(cat "$TXT"; echo "$STAMP <<< Current time.")
+	elif [[ "$*" = "-" ]]; then
+		grep '^[0-9]' "$TXT" | tail -n1 | grep --color '^\S*'
+		echo "Enter notes:" | grep --color '.*'
+		sed 's/^/  /' >> "$TXT"
+		echo "Use \"ts --all\" to see notes." | grep --color '.*'
 	else
-		echo "$STAMP $@"|tee -a $TXT|grep --color '^\S*'
+		echo "$STAMP $*" | tee -a "$TXT" | grep --color '^\S*'
 	fi
 }
 
 function tsl() {
-	ts|sed 's/Z/+0000/'|while read line; do
-		local GIVEN_STAMP="$(awk '{print $1}' <<< $line)"
-		local CONVERTED_STAMP="$(date -j -f '%y%m%d.%H%M%z' $GIVEN_STAMP '+%y%m%d.%H%M%z')"
-		sed "s/$GIVEN_STAMP/$CONVERTED_STAMP/" <<< $line
-	done|grep --color '^\S*'
+	ts | sed 's/Z/+0000/' | while read -r line; do
+		local GIVEN_STAMP="$(awk '{print $1}' <<< "$line")"
+		local CONVERTED_STAMP="$(/bin/date -j -f '%y%m%d.%H%M%z' "$GIVEN_STAMP" '+%y%m%d.%H%M%z')"
+		sed "s/$GIVEN_STAMP/$CONVERTED_STAMP/" <<< "$line"
+	done | grep --color '^\S*'
 }
-
 ##############################################################
 # workspace.sh
 # Quickly create/search/switch-to project directories. Run
@@ -750,11 +747,11 @@ function tsl() {
 ##############################################################
 
 function workspace() {
-    local WORKSPACE_ROOT=~/workspaces
+    local WORKSPACE_ROOT="${SHELF_WORKSPACES:-$HOME/workspaces}"
     local ACTION=""
     local ORDER="name"
     local LABEL=""
-    case $1 in
+    case "$1" in
         -c|--create)
             ACTION="create"
             LABEL="$2"
@@ -772,15 +769,15 @@ function workspace() {
             LABEL="$1"
             ;;
     esac
-    case $ACTION in
+    case "$ACTION" in
         help)
             echo "Usage: workspace [OPTIONS] <LABEL>"
             echo "Switch to a workspace with the given label. Or, if an option is given:"
             echo
             echo "  -c, --create     Create a workspace with the given label."
             echo "  -h, --help       Display this help message."
-			echo
-			echo "If no argument is given, switch to the latest workspace."
+            echo
+            echo "If no argument is given, switch to the latest workspace."
             return 0
         ;;
         create)
@@ -802,26 +799,26 @@ function workspace() {
         *)
             if [ -z "$LABEL" ]; then
                 >&2 echo "Leaving $PWD"
-                cd $(ls -td ~/workspaces/*|head -n1)
+                cd "$(ls -td "$WORKSPACE_ROOT"/* | head -n1)"
                 return 0
             fi
-            local WORKSPACES=$(ls -td $WORKSPACE_ROOT/*|awk -F/ '{print $NF}')
+            local WORKSPACES="$(ls -td "$WORKSPACE_ROOT"/* | awk -F/ '{print $NF}')"
             if [ "$ORDER" = "date" ]; then
-                local WORKSPACE_LIST=$(awk -F. '{print $2,$0}'<<<$WORKSPACES|sort -n|awk '{print $2}')
+                local WORKSPACE_LIST="$(awk -F. '{print $2,$0}' <<< "$WORKSPACES" | sort -n | awk '{print $2}')"
             else
-                local WORKSPACE_LIST=$(sort<<<$WORKSPACES)
+                local WORKSPACE_LIST="$(sort <<< "$WORKSPACES")"
             fi
-            if ! grep -q $LABEL <<< $WORKSPACE_LIST; then
+            if ! grep -q "$LABEL" <<< "$WORKSPACE_LIST"; then
                 >&2 echo "Found 0 workspaces matching \"$LABEL\""
                 return 1
             else
-                local MATCHES=$(grep --color $LABEL <<< $WORKSPACE_LIST)
-                if [ $(wc -l <<< $MATCHES|xargs) -eq 1 ]; then
+                local MATCHES="$(grep --color "$LABEL" <<< "$WORKSPACE_LIST")"
+                if [ "$(wc -l <<< "$MATCHES" | xargs)" -eq 1 ]; then
                     >&2 echo "Leaving $PWD"
                     cd "$WORKSPACE_ROOT/$MATCHES"
                 else
-                    >&2 echo "Found $(wc -l <<< $MATCHES|xargs) matching workspaces:"
-                    sed 's/^/  /' <<< $MATCHES|grep --color $LABEL
+                    >&2 echo "Found $(wc -l <<< "$MATCHES" | xargs) matching workspaces:"
+                    sed 's/^/  /' <<< "$MATCHES" | grep --color "$LABEL"
                     return 1
                 fi
             fi

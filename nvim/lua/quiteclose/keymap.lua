@@ -96,7 +96,7 @@ function Deferred.after_plugin_todotxt()
   map("<leader>Tsd", function() todotxt.sort_tasks_by_due_date() end, "Sort by due date")
 end
 
--- Called from ../plugins/fugitive.lua
+-- Called from ../plugins/undotree.lua
 function Deferred.after_plugin_undotree()
   vim.keymap.set('n', '<leader>u', vim.cmd.UndotreeToggle)
 end

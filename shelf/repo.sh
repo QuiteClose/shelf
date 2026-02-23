@@ -3,7 +3,7 @@
 # Quickly clone/search/switch-to repo directories.
 ##############################################################
 
-REPO_ROOT="$(realpath ~/repos)"
+REPO_ROOT="${SHELF_REPOS:-$(realpath ~/repos)}"
 REPO_STAT="%Y %W %n"
 REPO_LIST="$REPO_ROOT/_manifest.txt"
 REPO_HOST="_server.txt"
@@ -27,14 +27,14 @@ repo_reset() {
 
 repo_stat() {
   local SELECT="$1"
-  stat -c "${REPO_STAT}" "${REPO_ROOT}/${SELECT}/.git"| sed "s|${REPO_ROOT}/||;s|/\.git\$||"
+  stat -c "${REPO_STAT}" "${REPO_ROOT}/${SELECT}/.git" | sed "s|${REPO_ROOT}/||;s|/\.git\$||"
 }
 
 repo_usage() {
-  >&2 echo "Usage: repo [-c <URL> | -s | [-d|-r] <TERMS...>]
+  >&2 echo "Usage: repo [-c <URL> | -s | [-d] <TERMS...>]
   Searches cloned repositories for given TERMS and changes-dir to the match.
-  repositories. More terms can be added to narrow down the search. Changes
-  directory to the matching repository if only one match is found.
+  More terms can be added to narrow down the search. Changes directory to the
+  matching repository if only one match is found.
 
   -b, --browse Scroll through all cloned repositories (or a specific remote).
   --clone      Clone a repository with the given terms.
@@ -49,18 +49,18 @@ repo() {
   repo_init
   local GIT_URI_REGEX='^git@[A-Za-z0-9_.-]+(:[0-9]+)?:[A-Za-z0-9_.\/-]+\.git$'
   local GIT_HTTP_REGEX='^https?://[A-Za-z0-9_.-]+(/[A-Za-z0-9_.\/-]+)?\.git$'
-  local ACTION="search" # What to do
-  local ORDER="name"    # Sort order
-  local REMOTE=""       # Name of server, e.g. github for github.com
-  local SEARCH=""       # Search terms to select repos. 
-  local FILTER=""       # Filter used by grep (built from SEARCH)
-  local MATCHES=""      # Repos that matches the filter
-  local COUNT=""        # Number of matches
-  local SORTER="sort"   # sort command
-  local FIELDS="-nk3,3" # sort command flags
-  local GITURI=""       # Git URI, e.g. git@github.com:quiteclose/shelf.git
-  local SERVER=""       # First part of URI, e.g. git@github.com
-  local SELECT=""       # Selects repos on the server, e.g. quiteclose/shelf
+  local ACTION="search"
+  local ORDER="name"
+  local REMOTE=""
+  local SEARCH=""
+  local FILTER=""
+  local MATCHES=""
+  local COUNT=""
+  local SORTER="sort"
+  local FIELDS="-nk3,3"
+  local GITURI=""
+  local SERVER=""
+  local SELECT=""
   case "$1" in
     -h|--help)   repo_usage; return 0 ;;
     -b|--browse) ACTION="browse"; REMOTE="$2"; ;;
@@ -87,26 +87,22 @@ repo() {
       ;;
     clone)
       if [[ -z "${SEARCH}" ]]; then
-        # Only REMOTE given, so expect that to be a git@ URI
         GITURI="${REMOTE}"
         if [[ "${GITURI}" =~ $GIT_URI_REGEX ]]; then
-          # Get URI fields, e.g.  # git@github.com:quiteclose/shelf.git
-          SEARCH="${GITURI##*:}"  #                quiteclose/shelf.git
-          SEARCH="${SEARCH%.git}" #                quiteclose/shelf
-          SERVER="${GITURI%:*}"   # git@github.com
-          SERVER="${SERVER#git@}" #     github.com
+          SEARCH="${GITURI##*:}"
+          SEARCH="${SEARCH%.git}"
+          SERVER="${GITURI%:*}"
+          SERVER="${SERVER#git@}"
         elif [[ "${GITURI}" =~ $GIT_HTTP_REGEX ]]; then
-          # Get URI fields, e.g.  # https://github.com/quiteclose/shelf.git
-          SERVER="${GITURI#*://}" #         github.com/quiteclose/shelf.git
-          SERVER="${SERVER%%/*}"  #         github.com
-          SEARCH="${GITURI#*://}" #         github.com/quiteclose/shelf.git
-          SEARCH="${SEARCH#*/}"   #                    quiteclose/shelf.git
-          SEARCH="${SEARCH%.git}" #                    quiteclose/shelf
+          SERVER="${GITURI#*://}"
+          SERVER="${SERVER%%/*}"
+          SEARCH="${GITURI#*://}"
+          SEARCH="${SEARCH#*/}"
+          SEARCH="${SEARCH%.git}"
         else
           >&2 echo "Either provide a git@ URI, an HTTPS URL or <remote> <name>/<repo>"
           return 1
         fi
-        # Find the remote that matches the server
         REMOTE=""
         for name in "${REPO_ROOT}"/*; do
           if [[ ! -d "${name}" || ! -f "${name}/${REPO_HOST}" ]]; then continue; fi
@@ -116,10 +112,9 @@ repo() {
             break
           fi
         done
-        # Create the remote if it does not exist
         if [[ -z "${REMOTE}" ]]; then
           >&2 echo "Remote not found for ${SERVER}"
-          REMOTE="${REMOTE%%[^a-zA-Z0-9:]*}" # Isolate leading alnum
+          REMOTE="${SERVER%%[^a-zA-Z0-9]*}"
           if [[ -z "${REMOTE}" ]]; then
             >&2 echo "Remote name is empty. Cannot create remote."
             return 1
@@ -131,8 +126,15 @@ repo() {
           mkdir -p "${REPO_ROOT}/${REMOTE}"
           echo "${SERVER}" > "${REPO_ROOT}/${REMOTE}/${REPO_HOST}"
         fi
+      else
+        # REMOTE and SEARCH given separately (e.g. repo --clone github quiteclose/shelf)
+        if [[ ! -f "${REPO_ROOT}/${REMOTE}/${REPO_HOST}" ]]; then
+          >&2 echo "Remote ${REMOTE} does not have a ${REPO_HOST} file."
+          return 1
+        fi
+        SERVER="$(cat "${REPO_ROOT}/${REMOTE}/${REPO_HOST}")"
+        GITURI="git@${SERVER}:${SEARCH}.git"
       fi
-      # REMOTE and SEARCH are now set (and the remote should exist)
       if [[ ! -d "${REPO_ROOT}/${REMOTE}" ]]; then
         >&2 echo "Remote ${REMOTE} does not exist. Try cloning a full git@ URI."
         return 1
@@ -145,15 +147,16 @@ repo() {
         >&2 echo "${SEARCH} already exists at ${REPO_ROOT}/${REMOTE}/${SEARCH}"
         return 1
       fi
-      # Clone the repository
       SERVER="$(cat "${REPO_ROOT}/${REMOTE}/${REPO_HOST}")"
       SELECT="${REMOTE}/${SEARCH}"
       mkdir -p "$(dirname "${REPO_ROOT}/${SELECT}")"
+      if [[ -z "${GITURI}" ]]; then
+        GITURI="git@${SERVER}:${SEARCH}.git"
+      fi
       git clone "${GITURI}" "${REPO_ROOT}/${SELECT}"
       ;;
     search)
-      # search for matching repo
-      FILTER="$(echo "${SEARCH}"|sed 's/ /\\\|/g')"
+      FILTER="$(echo "${SEARCH}" | sed 's/ /\\\|/g')"
       if [[ "${ORDER}" = "activity" ]]; then FIELDS="-nk1,3"; fi
       if [[ "${ORDER}" = "clone" ]];    then FIELDS="-nk2,3"; fi
       if [[ "${ORDER}" = "history" ]];  then FIELDS=""; SORTER="cat"; fi
@@ -185,7 +188,7 @@ repo() {
     local MATCH="$(grep -m1 -w "${SELECT}" "${REPO_LIST}")"
     if [[ -n "${MATCH}" ]]; then
       local OTHERS="$(grep -vw "${SELECT}" "${REPO_LIST}")"
-      {echo "${OTHERS}"; echo "${MATCH}"} > "${REPO_LIST}"
+      { echo "${OTHERS}"; echo "${MATCH}"; } > "${REPO_LIST}"
     else
       repo_stat "${SELECT}" >> "${REPO_LIST}"
     fi
